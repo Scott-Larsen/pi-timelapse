@@ -10,8 +10,7 @@ import yaml
 import time
 import pytz
 from sunriseSunset import calculateStartTimeAndNumberOfPictures
-from dropboxTransfer import dropboxUploader, dropboxGetFileDownloadLinks
-from sendEMail import sendEMail
+from dropboxUploader import dropboxUploader
 
 testing = False
 
@@ -108,13 +107,14 @@ def create_animated_gif():
     print("\nCreating animated gif.\n")
     os.system(
         "convert -delay 10 -loop 0 " + dir + "/image*.jpg " + dir + "-timelapse.gif"
-    )
+    )  # noqa
 
 
 def create_video(fileFolderName):
     print("\nCreating video (within the create_video function).\n")
 
-    # ffmpeg -r 24 -i 2020-11-16-timelapse/image%05d.jpg -c:v libx264 -vf fps=24 2020-11-16-timelapse.mp4
+    # subfolder = dir.split("/")[-1]
+
     command = (
         "ffmpeg -r 24 -i "
         + fileFolderName
@@ -124,14 +124,22 @@ def create_video(fileFolderName):
         + ".mp4"
     )
 
+    # print(f"Video triggering command is: {command}")
+    # print(command)
+    # print(f"dir is: {dir}\n")
     print(dir)
     os.system(command)
     print("os.system - video creating command - command should have run.\n")
 
 
 def main():
+    # createVideo = config["create_video"]
+    # print(f"{createVideo}")
+    # print(f"{config["create_video"]}")
 
     startTime, numberOfPhotographsToTake = calculateStartTimeAndNumberOfPictures()
+
+    # startTime =
 
     print(
         f"Scheduling the timelapse to start at {startTime} UTC and take {numberOfPhotographsToTake} photographs.\n"
@@ -151,15 +159,14 @@ def main():
 
     # Create directory based on current timestamp.
     initiationDate = datetime.utcnow().date()
-
+    # print(f"initiationDate = " + initiationDate)
     fileFolderName = initiationDate.strftime("%Y-%m-%d") + "-timelapse"
     print(f"fileFolderName is: " + fileFolderName)
-
     dir = os.path.join(sys.path[0], fileFolderName)
     print("dir is: " + dir)
-
     timelapseFilename = fileFolderName + ".mp4"
-
+    # print(dir)
+    # print(datetime.utcnow().date().strftime("%Y-%m-%d"))
     print("Creating the Directory for the still images.\n")
     create_timestamped_dir(dir)
 
@@ -169,30 +176,47 @@ def main():
 
     print("Captured all of the images.\n")
 
+    # TODO: These may not get called after the end of the threading process...
     # Create an animated gif (Requires ImageMagick).
     if config["create_gif"]:
         create_animated_gif()
 
-    # Create a video (Requires ffmpeg).
+    # Create a video (Requires avconv - which is basically ffmpeg).
     print("About to trigger video")
-
+    # print(config["create_video"])
     if config["create_video"]:
         print("Triggering create video function.\n")
         create_video(fileFolderName)
-        print("Video created.\n")
+        print("Video finished.\n")
 
+        # try:
+        print(f"timelapseFilename is: " + timelapseFilename)
+        # fileFolderName = "series-2020-11-14"
         print(
             "Uploading video to Dropbox at "
             + datetime.utcnow().date().strftime("%Y-%m-%d")
             + "\n"
         )
-
+        # print("timelapseFilename is: " + timelapseFilename)
+        # print(fileFolderName + "-timelapse.mp4")
         dropboxUploader(timelapseFilename)
         print("Uploaded video to Dropbox\n")
-
-        dropboxFileDownloadLinks = dropboxGetFileDownloadLinks()
-
-        sendEMail(dropboxFileDownloadLinks)
+    # except:
+    #     fileFolderNameSplitByDashes = fileFolderName.split("-")
+    #     print(fileFolderNameSplitByDashes)
+    #     fileFolderNameSplitByDashes[-1] = str(int(fileFolderNameSplitByDashes[-1]) - 1)
+    #     print(fileFolderNameSplitByDashes)
+    #     fileFolderName = "-".join(fileFolderNameSplitByDashes)
+    #     print(fileFolderName)
+    #     print(
+    #         "Uploading video to Dropbox at "
+    #         + datetime.utcnow().date().strftime("%Y-%m-%d")
+    #         + "\n"
+    #     )
+    #     print("fileFolderName is ", fileFolderName)
+    #     print(fileFolderName + "-timelapse.mp4")
+    #     dropboxUploader(fileFolderName + "-timelapse.mp4")
+    #     print("Uploaded video to Dropbox\n")
 
 
 if __name__ == "__main__":

@@ -10,10 +10,8 @@ import yaml
 import time
 import pytz
 from sunriseSunset import calculateStartTimeAndNumberOfPictures
-from dropboxTransfer import dropboxUploader, dropboxGetFileDownloadLinks
-from sendEMail import sendEMail
 
-testing = False
+testing = True
 
 config = yaml.safe_load(open(os.path.join(sys.path[0], "config.yml")))
 image_number = 0
@@ -98,7 +96,7 @@ def capture_images(dir, numberOfPhotographsToTake):
         # else:
         print("\nTime-lapse capture complete!\n")
         # TODO: This doesn't pop user into the except block below :(.
-        # sys.exit()
+        sys.exit()
 
     except (KeyboardInterrupt):  # , SystemExit):
         print("\nTime-lapse capture cancelled.\n")
@@ -108,30 +106,39 @@ def create_animated_gif():
     print("\nCreating animated gif.\n")
     os.system(
         "convert -delay 10 -loop 0 " + dir + "/image*.jpg " + dir + "-timelapse.gif"
-    )
+    )  # noqa
 
 
-def create_video(fileFolderName):
+def create_video():
     print("\nCreating video (within the create_video function).\n")
 
-    # ffmpeg -r 24 -i 2020-11-16-timelapse/image%05d.jpg -c:v libx264 -vf fps=24 2020-11-16-timelapse.mp4
+    # subfolder = dir.split("/")[-1]
+
     command = (
         "ffmpeg -r 24 -i "
-        + fileFolderName
-        + "/image%05d.jpg"
+        + dir
+        + "/image05d.jpg"
         + " -c:v libx264 -vf fps=24 "
-        + fileFolderName
-        + ".mp4"
+        + dir
+        + "-timelapse.mp4"
     )
 
+    # print(f"Video triggering command is: {command}")
+    print(command)
+    # print(f"dir is: {dir}\n")
     print(dir)
     os.system(command)
     print("os.system - video creating command - command should have run.\n")
 
 
 def main():
+    # createVideo = config["create_video"]
+    # print(f"{createVideo}")
+    # print(f"{config["create_video"]}")
 
     startTime, numberOfPhotographsToTake = calculateStartTimeAndNumberOfPictures()
+
+    # startTime =
 
     print(
         f"Scheduling the timelapse to start at {startTime} UTC and take {numberOfPhotographsToTake} photographs.\n"
@@ -141,25 +148,15 @@ def main():
     if testing:
         initialSleep = 0
     else:
-        initialSleep = (
-            (startTime - currentTime).total_seconds()
-            if (startTime - currentTime).total_seconds() >= 0
-            else 0
-        )
+        initialSleep = (startTime - currentTime).total_seconds()
     print(f"Sleeping for {int(initialSleep)} seconds.\n")
     time.sleep(initialSleep)
 
     # Create directory based on current timestamp.
-    initiationDate = datetime.utcnow().date()
-
-    fileFolderName = initiationDate.strftime("%Y-%m-%d") + "-timelapse"
-    print(f"fileFolderName is: " + fileFolderName)
-
-    dir = os.path.join(sys.path[0], fileFolderName)
-    print("dir is: " + dir)
-
-    timelapseFilename = fileFolderName + ".mp4"
-
+    dir = os.path.join(
+        sys.path[0], "series-" + datetime.utcnow().date().strftime("%Y-%m-%d")
+    )
+    # print(datetime.utcnow().date().strftime("%Y-%m-%d"))
     print("Creating the Directory for the still images.\n")
     create_timestamped_dir(dir)
 
@@ -169,30 +166,18 @@ def main():
 
     print("Captured all of the images.\n")
 
+    # TODO: These may not get called after the end of the threading process...
     # Create an animated gif (Requires ImageMagick).
     if config["create_gif"]:
         create_animated_gif()
 
-    # Create a video (Requires ffmpeg).
+    # Create a video (Requires avconv - which is basically ffmpeg).
     print("About to trigger video")
-
-    if config["create_video"]:
+    print(config["create_video"])
+    if config["create_video"] == "True":
         print("Triggering create video function.\n")
-        create_video(fileFolderName)
-        print("Video created.\n")
-
-        print(
-            "Uploading video to Dropbox at "
-            + datetime.utcnow().date().strftime("%Y-%m-%d")
-            + "\n"
-        )
-
-        dropboxUploader(timelapseFilename)
-        print("Uploaded video to Dropbox\n")
-
-        dropboxFileDownloadLinks = dropboxGetFileDownloadLinks()
-
-        sendEMail(dropboxFileDownloadLinks)
+        create_video()
+        print("Video finished.\n")
 
 
 if __name__ == "__main__":
