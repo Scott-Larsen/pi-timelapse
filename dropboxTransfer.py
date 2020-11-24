@@ -1,5 +1,7 @@
 import dropbox
+import send2trash
 from config import D_ACCESS_TOKEN
+from zipfile import ZipFile
 
 
 class TransferData:
@@ -26,6 +28,17 @@ class TransferData:
             _, res = dbx.files_download_zip(path="/" + folderName)
             f.write(res.content)
 
+        print(f"Downloaded the zipped folder {folderName}, now unzipping it.")
+
+        zf = ZipFile(writePath + folderName + ".zip")
+        zf.extractall(writePath)
+        zf.close()
+
+        print(f"Deleting the local zip file {folderName}.zip.")
+        send2trash.send2trash(writePath + folderName + ".zip")
+        print(f"Downloaded the folder {folderName}, now deleting it from Drobox.\n")
+        dbx.files_delete_v2("/" + folderName)
+
     def dropboxGetFileDownloadLinks(self):
         dbx = dropbox.Dropbox(self.access_token)
 
@@ -36,6 +49,11 @@ class TransferData:
                 dbx.sharing_create_shared_link("/" + file.name).url
             )
         return listOfDropboxLinks
+
+    def dropboxDeleteFile(self, filename):
+        dbx = dropbox.Dropbox(self.access_token)
+
+        dbx.files_delete_v2("/" + filename)
 
 
 def dropboxUploader(filename):
@@ -64,7 +82,7 @@ def dropboxDownloadFolderZipped(folderName, writePath):
     access_token = D_ACCESS_TOKEN
     transferData = TransferData(access_token)
 
-    print(f"{folderName} downloading from Dropbox as a Zip file.\n")
+    print(f"\n{folderName} downloading from Dropbox as a Zip file.")
 
     transferData.download_folder_zipped(folderName, writePath)
 
@@ -76,3 +94,10 @@ def dropboxGetFileDownloadLinks():
     transferData = TransferData(access_token)
 
     return transferData.dropboxGetFileDownloadLinks()
+
+
+def dropboxDeleteFile(filename):
+    access_token = D_ACCESS_TOKEN
+    transferData = TransferData(access_token)
+
+    return transferData.dropboxDeleteFile(filename)
