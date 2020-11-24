@@ -1,5 +1,6 @@
 import os
 import dropbox
+from dropbox.files import WriteMode
 from config import D_ACCESS_TOKEN
 
 
@@ -7,7 +8,7 @@ class TransferData:
     def __init__(self, access_token):
         self.access_token = access_token
 
-    def upload_file(self, fileOrFolderName, file_to):
+    def upload_file(self, fileOrFolderName, file_to, write_mode):
         dbx = dropbox.Dropbox(self.access_token)
 
         # This should detect individual files
@@ -15,7 +16,7 @@ class TransferData:
             with open(
                 fileOrFolderName, "rb"
             ) as f:  # Deleted leading "/" to upload .mp4
-                dbx.files_upload(f.read(), file_to)
+                dbx.files_upload(f.read(), file_to, mode=WriteMode(write_mode, None))
 
         # This should upload directories
         else:
@@ -28,7 +29,9 @@ class TransferData:
                     dropboxPath = os.path.join("/", fileOrFolderName, relativePath)
 
                     with open(localPath, "rb") as f:
-                        dbx.files_upload(f.read(), dropboxPath)
+                        dbx.files_upload(
+                            f.read(), dropboxPath, mode=WriteMode(write_mode, None)
+                        )
 
     def download_file(self, filename, writePath):
         dbx = dropbox.Dropbox(self.access_token)
@@ -49,13 +52,13 @@ class TransferData:
         return listOfDropboxLinks
 
 
-def dropboxUploader(fileOrFolderName):
+def dropboxUploader(fileOrFolderName, write_mode="add"):
     access_token = D_ACCESS_TOKEN
     transferData = TransferData(access_token)
 
     print("File(s) uploading to Dropbox.\n")
 
-    transferData.upload_file(fileOrFolderName, "/" + fileOrFolderName)
+    transferData.upload_file(fileOrFolderName, "/" + fileOrFolderName, write_mode)
 
     print("File successfully uploaded to Dropbox\n")
 

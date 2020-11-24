@@ -18,6 +18,8 @@ def sendEMail(links):
 
     body = (
         "Today's video:\n"
+        + links.pop(-2)
+        + "\n\nOverall project timelapse:\n"
         + links.pop()
         + "\n\nPrevious days' videos:\n"
         + "\n".join(links)
@@ -50,4 +52,3 @@ def sendEMail(links):
 #         "https://www.dropbox.com/s/a5eibgl74y1w5xk/series-2020-11-10-timelapse.mp4?dl=0",
 #     ]
 # )
-
