@@ -18,7 +18,8 @@ from sendEMail import sendEMail
 
 testing = 0  # 1 for True (i.e., testing), 0 for False
 if testing:
-    takeNewPhotos = 0  # 1 for True (i.e., take photos), 0 for False
+    takeNewPhotos = 1  # 1 for True (i.e., take photos), 0 for False
+    numberOfPhotographsToTakeWhenTesting = 103
 
 config = yaml.safe_load(open(os.path.join(sys.path[0], "config.yml")))
 image_number = 0
@@ -119,6 +120,26 @@ def create_animated_gif():
     )
 
 
+def create_video(stillsDirectory, initiationDateString, timelapseFullPath):
+    print("\nCreating video (within the create_video function).\n")
+
+    # ffmpeg -r 24 -i 2020-11-18-timelapse/image%05d.jpg -c:v libx264 -vf fps=24 2020-11-18-timelapse.mp4
+    # ffmpeg -r 24 -i /home/pi/pi-timelapse/2020-11-22-timelapse/image%05d.jpg -c:v libx265 -crf 28 /home/pi/pi-timelapse/2020-11-22-timelapse.mp4
+    # 2020-11-22-00006.jpg
+
+    command = (
+        "ffmpeg -r 24 -i "
+        + str(stillsDirectory)
+        + "/"
+        + initiationDateString
+        + "-%05d.jpg"
+        + " -c:v libx265 -crf 28 "
+        + str(timelapseFullPath)
+    )
+
+    os.system(command)
+
+
 def create_meta_video(
     initiationDateString, workingDirectory, stillsDirectory, numberOfPhotographsToTake
 ):
@@ -145,7 +166,8 @@ def create_meta_video(
         # new_dst_file_name = os.path.join(dest_dir, fileFolderName + "-" + filename)
 
         # os.rename(dst_file, new_dst_file_name)  # rename
-    send2trash("metaTimelapse.mp4")
+    # Delete the metaTimelapse.mp4 to make way for the new one.
+    # send2trash("metaTimelapse.mp4")
 
     command = 'ffmpeg -r 24 -pattern_type glob -i "metaTimelapse/*.jpg" -c:v libx264 -vf fps=24 metaTimelapse.mp4'
 
@@ -157,41 +179,16 @@ def create_meta_video(
     # print(os.listdir())
 
 
-def create_video(stillsDirectory, initiationDateString, timelapseFullPath):
-    print("\nCreating video (within the create_video function).\n")
-
-    # ffmpeg -r 24 -i 2020-11-18-timelapse/image%05d.jpg -c:v libx264 -vf fps=24 2020-11-18-timelapse.mp4
-    # ffmpeg -r 24 -i /home/pi/pi-timelapse/2020-11-22-timelapse/image%05d.jpg -c:v libx265 -crf 28 /home/pi/pi-timelapse/2020-11-22-timelapse.mp4
-    # 2020-11-22-00006.jpg
-
-    command = (
-        "ffmpeg -r 24 -i "
-        + str(stillsDirectory)
-        + "/"
-        + initiationDateString
-        + "-%05d.jpg"
-        + " -c:v libx265 -crf 28 "
-        + str(timelapseFullPath)
-    # )
-
-    # print(command)
-
-    # print(dir)
-    os.system(command)
-    print("os.system - video creating command - command should have run.\n")
-
-
 def main():
 
     startTime, numberOfPhotographsToTake = calculateStartTimeAndNumberOfPictures()
 
-    print(
-        f"Scheduling the timelapse to start at {startTime} UTC and take {numberOfPhotographsToTake} photographs.\n"
-    )
-
+    # print(f"Scheduling the timelapse to start at")
+    # print(f"Sleeping for {startTime} seconds.\n")
     currentTime = datetime.utcnow().replace(tzinfo=pytz.utc)
     if testing:
         initialSleep = 0
+        numberOfPhotographsToTake = numberOfPhotographsToTakeWhenTesting
     else:
         initialSleep = (
             (startTime - currentTime).total_seconds()
@@ -218,15 +215,14 @@ def main():
     timelapseFullPath = Path.joinpath(workingDirectory, timelapseFilename)
 
     if not testing or testing and takeNewPhotos:
-        print("Creating the Directory for the still images.\n")
+        print(f"Creating the <{stillsDirectory}> for the still images.\n")
         create_timestamped_dir(stillsDirectory)
 
-    if not testing or testing and takeNewPhotos:
         # Kick off the capture process.
         print("Capturing the first image.\n")
         capture_images(stillsDirectory, initiationDateString, numberOfPhotographsToTake)
 
-    print("Captured all of the images.\n")
+        print("Captured all of the images.\n")
 
     # Create an animated gif (Requires ImageMagick).
     if config["create_gif"]:
@@ -234,30 +230,38 @@ def main():
 
     # Create a video (Requires ffmpeg).
     if config["create_video"]:
-        print("Triggering main timelapse function.\n")
         create_video(stillsDirectory, initiationDateString, timelapseFullPath)
-        print("Timelapse video created.\n")
+        print("Daily timelapse video created.\n")
 
         # Print all folders in the directory
-        print("os.listdir(workingDirectory) =:")
-        print(os.listdir(workingDirectory))
+        # print("os.listdir(workingDirectory) =:")
+        # print(os.listdir(workingDirectory))
         # dir = os.path.join(sys.path[0], fileFolderName)
 
-        print(
-            "config.py exists - "
-            + str(os.path.exists(Path.joinpath(workingDirectory, "config.py")))
-        )
-        print(timelapseFilename + " exists - " + str(os.path.exists(timelapseFullPath)))
+        # print(
+        #     str(stillsDirectory)
+        #     + " exists - "
+        #     + str(os.path.exists(stillsDirectory))
+        #     + "\n"
+        #     + str(timelapseFilename)
+        #     + " exists - "
+        #     + str(os.path.exists(timelapseFullPath))
+        #     + "\n"
+        #     + "metaTimelapse exists - "
+        #     + str(os.path.exists(workingDirectory / "metaTimelapse"))
+        #     + "\n"
+        # )
 
         print(
             f"Uploading {timelapseFilename} to Dropbox at "
             + datetime.utcnow().strftime("%Y-%m-%d %H:%m:%s")
-            + "\n"
+            + " UTC\n"
         )
-
         dropboxUploader(timelapseFilename)
-        print("Uploaded video to Dropbox\n")
         send2trash(timelapseFilename)
+        print(
+            "Uploaded daily timelapse video to Dropbox and deleted if from Raspberry Pi\n"
+        )
 
     if config["create_meta_video"]:
         create_meta_video(
@@ -266,9 +270,15 @@ def main():
             stillsDirectory,
             numberOfPhotographsToTake,
         )
-
+        print("MetaTimelapse updated")
+        # print(
+        #     "metaTimelapse.mp4 exists - "
+        #     + str(os.path.exists(workingDirectory / "metaTimelapse.mp4"))
+        #     + "\n"
+        # )
         dropboxUploader("metaTimelapse.mp4", "overwrite")
         send2trash("metaTimelapse.mp4")
+        print("MetaTimelapse uploaded to Dropbox and deleted from Raspberry Pi\n")
 
     if config["create_video"] or config["create_meta_video"]:
         # Send e-mail about new video being uploaded to Dropbox

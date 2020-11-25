@@ -18,7 +18,7 @@ def sendEMail(links):
 
     body = (
         "Today's video:\n"
-        + links.pop(-2)
+        + links.pop(-2) 
         + "\n\nOverall project timelapse:\n"
         + links.pop()
         + "\n\nPrevious days' videos:\n"

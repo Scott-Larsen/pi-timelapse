@@ -40,6 +40,24 @@ class TransferData:
             _, res = dbx.files_download(path="/" + filename)
             f.write(res.content)
 
+    def download_folder_zipped(self, folderName, writePath):
+        dbx = dropbox.Dropbox(self.access_token)
+
+        with open(writePath + folderName + ".zip", "wb") as f:
+            _, res = dbx.files_download_zip(path="/" + folderName)
+            f.write(res.content)
+
+        print(f"Downloaded the zipped folder {folderName}, now unzipping it.")
+
+        zf = ZipFile(writePath + folderName + ".zip")
+        zf.extractall(writePath)
+        zf.close()
+
+        print(f"Deleting the local zip file {folderName}.zip.")
+        send2trash.send2trash(writePath + folderName + ".zip")
+        print(f"Downloaded the folder {folderName}, now deleting it from Drobox.\n")
+        dbx.files_delete_v2("/" + folderName)
+
     def dropboxGetFileDownloadLinks(self):
         dbx = dropbox.Dropbox(self.access_token)
 
@@ -50,6 +68,11 @@ class TransferData:
                 dbx.sharing_create_shared_link("/" + file.name).url
             )
         return listOfDropboxLinks
+
+    def dropboxDeleteFile(self, filename):
+        dbx = dropbox.Dropbox(self.access_token)
+
+        dbx.files_delete_v2("/" + filename)
 
 
 def dropboxUploader(fileOrFolderName, write_mode="add"):
@@ -74,6 +97,17 @@ def dropboxDownloader(filename, writePath):
     print("File successfully downloaded from Dropbox\n")
 
 
+def dropboxDownloadFolderZipped(folderName, writePath):
+    access_token = D_ACCESS_TOKEN
+    transferData = TransferData(access_token)
+
+    print(f"\n{folderName} downloading from Dropbox as a Zip file.")
+
+    transferData.download_folder_zipped(folderName, writePath)
+
+    print(f"{folderName} successfully downloaded from Dropbox.\n")
+
+
 def dropboxGetFileDownloadLinks():
     access_token = D_ACCESS_TOKEN
     transferData = TransferData(access_token)
@@ -81,5 +115,8 @@ def dropboxGetFileDownloadLinks():
     return transferData.dropboxGetFileDownloadLinks()
 
 
-# dropboxUploader("2020-11-17-timelapse")
-# dropboxUploader("log.txt")
+def dropboxDeleteFile(filename):
+    access_token = D_ACCESS_TOKEN
+    transferData = TransferData(access_token)
+
+    return transferData.dropboxDeleteFile(filename)

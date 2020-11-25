@@ -138,65 +138,18 @@ def calculateStartTimeAndNumberOfPictures():
 
     workingFinishDatetime = parse(currentDate + " " + workingFinish + "+00:00")
 
-    # workingStartDatetime = datetime.strptime(
-    #     currentDate + " " + workingStart + "+00:00", "%Y-%m-%d %H:%M"
-    # )
-    # workingFinishDatetime = datetime.strptime(
-    #     currentDate + " " + workingFinish, "%Y-%m-%d %H:%M"
-    # )
-
-    # print(workingStartDatetime)
-
-    # print(sunriseDateTime, workingStartDatetime)
-
     earliestStart = max(sunriseDateTime, workingStartDatetime)
-    # print(earliestStart)
     latestFinish = min(sunsetDateTime, workingFinishDatetime)
-    # print(f"{latestFinish = }")
-    # print(latestFinish)
-
-    # print(
-    #     "\n",
-    #     f"{sunriseDateTime = }",
-    #     "\n",
-    #     f"{sunsetDateTime = }",
-    #     "\n",
-    #     f"{workingStartDatetime = }",
-    #     "\n",
-    #     f"{workingFinishDatetime = }",
-    #     "\n",
-    #     f"{earliestStart = }",
-    #     "\n",
-    #     f"{latestFinish = }",
-    #     "\n",
-    #     latestFinish - earliestStart,
-    # )
-
-    # print(sunriseSunset)
 
     dayLengthInSeconds = (latestFinish - earliestStart).total_seconds()
     # If dayLengthInSeconds is negative, it's split over two days and we need to add a day's worth of seconds
     if dayLengthInSeconds < 0:
         dayLengthInSeconds = dayLengthInSeconds + 24 * 60 * 60
-    # print(f"{dayLengthInSeconds = }")
+
     (numberOfIntervals, remainingTime) = divmod(dayLengthInSeconds, interval)
-    # print(numberOfIntervals, remainingTime)
 
-    # print(f"{timedelta(remainingTime / 2 = )}")
     numberOfPhotographsToTake = int(numberOfIntervals + 1)
-    startTime = earliestStart + timedelta(seconds=remainingTime / 2)
-    # print(earliestStart, startTime)
 
-    # print(f"{numberOfPhotographsToTake = } \n {startTime = }")
+    startTime = earliestStart + timedelta(seconds=remainingTime / 2)
 
     return startTime, numberOfPhotographsToTake
-
-
-# 6:45 - 4:46
-# 11:45 - 21:46
-
-# workingStart: "6:00" 11
-# workingFinish: "17:00" 22
-
-# 23:44
-
