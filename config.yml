@@ -1,0 +1,55 @@
+---
+##################
+# Basic Settings #
+##################
+
+# Image resolution Set to empty object (`{ }`) to use default resolution.
+resolution:
+  width: 1920
+  height: 1080
+
+# The number of images to capture.
+total_images: 40
+
+# The interval between captures (in seconds).
+interval: 30
+
+# Whether to create an animated gif after capturing the time-lapse images.
+create_gif: False
+
+# Whether to create an video after capturing the time-lapse images.
+create_meta_video: True
+
+# Whether to create an video after capturing the time-lapse images.
+create_video: True
+
+# GPS Location
+# Lahaska
+latitude: 40.351138
+longitude: -75.048359
+# Lake
+# latitude: 41.389493
+# longitude: -75.361184
+
+# Working Start/ Working Finish
+workingStart: "6:00"
+workingFinish: "17:00"
+
+#####################
+# Advanced settings #
+#####################
+
+# ISO value. 0 = auto, 60-800 for manual ISO.
+iso: 0
+
+# Shutter speed. 0 = auto, else value in microseconds (seconds * 1000000).
+shutter_speed: 0
+
+# White balance. Set to empty object (`{ }`) to use auto white balance.
+white_balance:
+  {}
+  # red_gain: 1.3
+  # blue_gain: 1.75
+
+# Rotate the images taken by the camera. Possible value are 0, 90, 180 or 270
+rotation: 0
