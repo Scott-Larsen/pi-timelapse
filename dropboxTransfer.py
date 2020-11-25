@@ -1,18 +1,37 @@
+import os
 import dropbox
-import send2trash
+from dropbox.files import WriteMode
 from config import D_ACCESS_TOKEN
-from zipfile import ZipFile
 
 
 class TransferData:
     def __init__(self, access_token):
         self.access_token = access_token
 
-    def upload_file(self, filename, file_to):
+    def upload_file(self, fileOrFolderName, file_to, write_mode):
         dbx = dropbox.Dropbox(self.access_token)
 
-        with open(filename, "rb") as f:
-            dbx.files_upload(f.read(), file_to)
+        # This should detect individual files
+        if fileOrFolderName[-4] == ".":
+            with open(
+                fileOrFolderName, "rb"
+            ) as f:  # Deleted leading "/" to upload .mp4
+                dbx.files_upload(f.read(), file_to, mode=WriteMode(write_mode, None))
+
+        # This should upload directories
+        else:
+            for root, dirs, files in os.walk(fileOrFolderName):
+                for filename in files:
+
+                    localPath = os.path.join(root, filename)
+
+                    relativePath = os.path.relpath(localPath, fileOrFolderName)
+                    dropboxPath = os.path.join("/", fileOrFolderName, relativePath)
+
+                    with open(localPath, "rb") as f:
+                        dbx.files_upload(
+                            f.read(), dropboxPath, mode=WriteMode(write_mode, None)
+                        )
 
     def download_file(self, filename, writePath):
         dbx = dropbox.Dropbox(self.access_token)
@@ -56,26 +75,26 @@ class TransferData:
         dbx.files_delete_v2("/" + filename)
 
 
-def dropboxUploader(filename):
+def dropboxUploader(fileOrFolderName, write_mode="add"):
     access_token = D_ACCESS_TOKEN
     transferData = TransferData(access_token)
 
-    print(f"{filename} uploading to Dropbox.\n")
+    print("File(s) uploading to Dropbox.\n")
 
-    transferData.upload_file(filename, "/" + filename)
+    transferData.upload_file(fileOrFolderName, "/" + fileOrFolderName, write_mode)
 
-    print(f"{filename} successfully uploaded to Dropbox\n")
+    print("File successfully uploaded to Dropbox\n")
 
 
 def dropboxDownloader(filename, writePath):
     access_token = D_ACCESS_TOKEN
     transferData = TransferData(access_token)
 
-    print(f"{filename} downloading from Dropbox.\n")
+    print("File downloading from Dropbox.\n")
 
     transferData.download_file(filename, writePath)
 
-    print(f"{filename} successfully downloaded from Dropbox.\n")
+    print("File successfully downloaded from Dropbox\n")
 
 
 def dropboxDownloadFolderZipped(folderName, writePath):
