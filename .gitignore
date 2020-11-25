@@ -1,5 +1,6 @@
-series*
 config.py
+series*
 *.jpg
 *.mp4
 log.txt
+ARCHIVE/
