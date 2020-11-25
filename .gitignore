@@ -1,3 +1,7 @@
 series*
 config.yml
 config.py
+*.jpg
+*.mp4
+log.txt
+
