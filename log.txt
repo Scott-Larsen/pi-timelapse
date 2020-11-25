@@ -1,0 +1,59 @@
+
+2020-11-22-timelapse downloading from Dropbox as a Zip file.
+Downloaded the zipped folder 2020-11-22-timelapse, now unzipping it.
+Deleting the local zip file 2020-11-22-timelapse.zip.
+Downloaded the folder 2020-11-22-timelapse, now deleting it from Drobox.
+
+2020-11-22-timelapse successfully downloaded from Dropbox.
+
+
+2020-11-22-timelapse downloading from Dropbox as a Zip file.
+Downloaded the zipped folder 2020-11-22-timelapse, now unzipping it.
+Deleting the local zip file 2020-11-22-timelapse.zip.
+Downloaded the folder 2020-11-22-timelapse, now deleting it from Drobox.
+
+2020-11-22-timelapse successfully downloaded from Dropbox.
+
+series-2020-11-11-timelapse.mp4 is 8 days old.
+Deleting series-2020-11-11-timelapse.mp4 from Dropbox.
+
+2020-11-20-timelapse.mp4 is 2 days old.
+metaTimelapse.mp4 downloading from Dropbox.
+
+metaTimelapse.mp4 successfully downloaded from Dropbox.
+
+Downloading the file, metaTimelapse.mp4.
+
+2020-11-22-timelapse.mp4 downloading from Dropbox.
+
+2020-11-22-timelapse.mp4 successfully downloaded from Dropbox.
+
+Downloading the file, 2020-11-22-timelapse.mp4.
+
+series-2020-11-11-timelapse.mp4 is 8 days old.
+Deleting series-2020-11-11-timelapse.mp4 from Dropbox.
+
+2020-11-20-timelapse.mp4 is 2 days old.
+
+2020-11-23-timelapse downloading from Dropbox as a Zip file.
+Downloaded the zipped folder 2020-11-23-timelapse, now unzipping it.
+Deleting the local zip file 2020-11-23-timelapse.zip.
+Downloaded the folder 2020-11-23-timelapse, now deleting it from Drobox.
+
+2020-11-23-timelapse successfully downloaded from Dropbox.
+
+2020-11-17-timelapse.mp4 is 6 days old.
+2020-11-18-timelapse.mp4 is 3 days old.
+2020-11-19-timelapse.mp4 is 3 days old.
+2020-11-23-timelapse.mp4 downloading from Dropbox.
+
+2020-11-23-timelapse.mp4 successfully downloaded from Dropbox.
+
+Downloading the file, 2020-11-23-timelapse.mp4.
+
+metaTimelapse.mp4 downloading from Dropbox.
+
+metaTimelapse.mp4 successfully downloaded from Dropbox.
+
+Downloading the file, metaTimelapse.mp4.
+
