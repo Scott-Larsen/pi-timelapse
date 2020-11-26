@@ -4,3 +4,4 @@ series*
 *.mp4
 log.txt
 ARCHIVE/
+__pycache__/

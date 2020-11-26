@@ -18,7 +18,7 @@ from sendEMail import sendEMail
 
 testing = 0  # 1 for True (i.e., testing), 0 for False
 if testing:
-    takeNewPhotos = 1  # 1 for True (i.e., take photos), 0 for False
+    takeNewPhotos = 0  # 1 for True (i.e., take photos), 0 for False
     numberOfPhotographsToTakeWhenTesting = 103
 
 config = yaml.safe_load(open(os.path.join(sys.path[0], "config.yml")))
