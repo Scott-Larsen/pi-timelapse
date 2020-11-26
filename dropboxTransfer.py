@@ -56,7 +56,7 @@ class TransferData:
         zf.close()
 
         print(f"Deleting the local zip file {folderName}.zip.")
-        send2trash.send2trash(writePath + folderName + ".zip")
+        send2trash(writePath + folderName + ".zip")
         print(f"Downloaded the folder {folderName}, now deleting it from Drobox.\n")
         dbx.files_delete_v2("/" + folderName)
 
