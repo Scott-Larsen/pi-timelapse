@@ -1,6 +1,8 @@
 import os
 import dropbox
 from dropbox.files import WriteMode
+from zipfile import ZipFile
+from send2trash import send2trash
 from config import D_ACCESS_TOKEN
 
 

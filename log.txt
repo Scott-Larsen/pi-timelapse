@@ -57,3 +57,17 @@ metaTimelapse.mp4 successfully downloaded from Dropbox.
 
 Downloading the file, metaTimelapse.mp4.
 
+2020-11-23-timelapse
+2020-11-23
+2020-11-24-timelapse
+2020-11-24
+2020-11-18-timelapse.mp4 is 5 days old.
+2020-11-19-timelapse.mp4 is 5 days old.
+2020-11-23-timelapse.mp4 is 2 days old.
+2020-11-24-timelapse.mp4 is 0 days old.
+File downloading from Dropbox.
+
+File successfully downloaded from Dropbox
+
+Downloading the file, metaTimelapse.mp4.
+
