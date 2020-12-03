@@ -178,6 +178,13 @@ def create_meta_video(
 
     # print(os.listdir())
 
+def uploadFolders():
+    for folder in 
+    print("Uploading folder of still images.\n")
+    dropboxUploader(fileFolderName)
+    send2trash(fileFolderName)
+    print("Finished uploading still images.\n")
+
 
 def main():
 
@@ -285,11 +292,7 @@ def main():
         dropboxFileDownloadLinks = dropboxGetFileDownloadLinks()
         sendEMail(dropboxFileDownloadLinks)
 
-    print("Uploading folder of still images.\n")
-    dropboxUploader(fileFolderName)
-    send2trash(fileFolderName)
-    print("Finished uploading still images.\n")
-
+    uploadFolders()
 
 if __name__ == "__main__":
     main()
