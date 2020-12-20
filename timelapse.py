@@ -178,12 +178,16 @@ def create_meta_video(
 
     # print(os.listdir())
 
-def uploadFolders():
-    for folder in 
-    print("Uploading folder of still images.\n")
-    dropboxUploader(fileFolderName)
-    send2trash(fileFolderName)
-    print("Finished uploading still images.\n")
+
+def uploadDailyImageFolders():
+    dailyImageSubfolders = [
+        f.name for f in os.scandir() if f.is_dir() and "-timelapse" in f.name
+    ]
+    for folder in dailyImageSubfolders:
+        print(f"Uploading folder {folder}.\n")
+        dropboxUploader(folder)
+        send2trash(folder)
+        print(f"Finished uploading {folder}.\n")
 
 
 def main():
@@ -292,7 +296,8 @@ def main():
         dropboxFileDownloadLinks = dropboxGetFileDownloadLinks()
         sendEMail(dropboxFileDownloadLinks)
 
-    uploadFolders()
+    uploadDailyImageFolders()
+
 
 if __name__ == "__main__":
     main()
