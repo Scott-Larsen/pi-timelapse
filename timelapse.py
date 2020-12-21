@@ -4,7 +4,7 @@ from picamera import PiCamera
 import errno
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from time import sleep
 import yaml
 import time
@@ -12,14 +12,17 @@ import pytz
 import shutil
 from send2trash import send2trash
 from pathlib import Path
-from sunriseSunset import calculateStartTimeAndNumberOfPictures
+from sunriseSunset import calculateStartTimeAndEndTimes
 from dropboxTransfer import dropboxUploader, dropboxGetFileDownloadLinks
 from sendEMail import sendEMail
 
-testing = 0  # 1 for True (i.e., testing), 0 for False
+testing = 0  # 1 for TruePath.joinpath(stillsDirectory (i.e., testing), 0 for False
 if testing:
-    takeNewPhotos = 0  # 1 for True (i.e., take photos), 0 for False
-    numberOfPhotographsToTakeWhenTesting = 103
+    takeNewPhotos = 1  # 1 for True (i.e., take photos), 0 for False
+    currentTime = datetime.utcnow().replace(tzinfo=pytz.utc)
+    # currentTime = datetime.now()
+    # print(currentTime)
+    endTimeWhenTesting = currentTime + timedelta(0, 103) # Adds 103 seconds/ photos
 
 config = yaml.safe_load(open(os.path.join(sys.path[0], "config.yml")))
 image_number = 0
@@ -67,16 +70,17 @@ def set_camera_options(camera):
     return camera
 
 
-def capture_images(stillsDirectory, initiationDateString, numberOfPhotographsToTake):
+def capture_images(stillsDirectory, initiationDateString, endTime):
     try:
         global image_number
 
         if testing:
-            interval, numberOfPhotographsToTake = 1, 103
+            interval = 1 #, endTime = 1, currentTime + 103
         else:
             interval = config["interval"]
 
-        while image_number < numberOfPhotographsToTake:
+        print(datetime.utcnow().replace(tzinfo=pytz.utc), endTime)
+        while datetime.utcnow().replace(tzinfo=pytz.utc) < endTime:
 
             # Set a timer to take another picture at the proper interval after this
             # picture is taken.
@@ -141,7 +145,7 @@ def create_video(stillsDirectory, initiationDateString, timelapseFullPath):
 
 
 def create_meta_video(
-    initiationDateString, workingDirectory, stillsDirectory, numberOfPhotographsToTake
+    initiationDateString, workingDirectory, stillsDirectory, endTime
 ):
 
     # src_dir = os.getcwd() #get the current working dir
@@ -150,13 +154,18 @@ def create_meta_video(
     # create a dir where we want to copy and rename
     # dest_dir = os.mkdir('subfolder')
     # os.listdir()
-    # numberOfPhotographsToTake
+    # endTime
     # src_dir = stillsDirectory
-    # numberOfPhotographsToTake = 103
+    # endTime = 103
 
     dest_dir = Path.joinpath(workingDirectory, "metaTimelapse")
+
+    files = os.listdir(Path.joinpath(stillsDirectory))
+    files.sort()
+    lastPhotographNumber = int(files[-1][-9:-4])
+
     for i in range(
-        numberOfPhotographsToTake // 50 + 50, numberOfPhotographsToTake - 50, 50
+        lastPhotographNumber // 50 + 50, lastPhotographNumber - 50, 50
     ):
         filename = initiationDateString + "-" + str(i).zfill(5) + ".jpg"
         src_file = Path.joinpath(stillsDirectory, filename)
@@ -192,14 +201,14 @@ def uploadDailyImageFolders():
 
 def main():
 
-    startTime, numberOfPhotographsToTake = calculateStartTimeAndNumberOfPictures()
+    startTime, endTime = calculateStartTimeAndEndTimes()
 
     # print(f"Scheduling the timelapse to start at")
     # print(f"Sleeping for {startTime} seconds.\n")
     currentTime = datetime.utcnow().replace(tzinfo=pytz.utc)
     if testing:
         initialSleep = 0
-        numberOfPhotographsToTake = numberOfPhotographsToTakeWhenTesting
+        endTime = endTimeWhenTesting
     else:
         initialSleep = (
             (startTime - currentTime).total_seconds()
@@ -231,7 +240,7 @@ def main():
 
         # Kick off the capture process.
         print("Capturing the first image.\n")
-        capture_images(stillsDirectory, initiationDateString, numberOfPhotographsToTake)
+        capture_images(stillsDirectory, initiationDateString, endTime)
 
         print("Captured all of the images.\n")
 
@@ -279,7 +288,7 @@ def main():
             initiationDateString,
             workingDirectory,
             stillsDirectory,
-            numberOfPhotographsToTake,
+            endTime,
         )
         print("MetaTimelapse updated")
         # print(

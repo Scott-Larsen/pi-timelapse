@@ -9,7 +9,7 @@ import time
 from config import API_KEY
 
 
-def calculateStartTimeAndNumberOfPictures():
+def calculateStartTimeAndEndTimes():
 
     config = yaml.safe_load(open(os.path.join(sys.path[0], "config.yml")))
 
@@ -141,15 +141,15 @@ def calculateStartTimeAndNumberOfPictures():
     earliestStart = max(sunriseDateTime, workingStartDatetime)
     latestFinish = min(sunsetDateTime, workingFinishDatetime)
 
-    dayLengthInSeconds = (latestFinish - earliestStart).total_seconds()
-    # If dayLengthInSeconds is negative, it's split over two days and we need to add a day's worth of seconds
-    if dayLengthInSeconds < 0:
-        dayLengthInSeconds = dayLengthInSeconds + 24 * 60 * 60
+    # dayLengthInSeconds = (latestFinish - earliestStart).total_seconds()
+    # # If dayLengthInSeconds is negative, it's split over two days and we need to add a day's worth of seconds
+    # if dayLengthInSeconds < 0:
+    #     dayLengthInSeconds = dayLengthInSeconds + 24 * 60 * 60
 
-    (numberOfIntervals, remainingTime) = divmod(dayLengthInSeconds, interval)
+    # (numberOfIntervals, remainingTime) = divmod(dayLengthInSeconds, interval)
 
-    numberOfPhotographsToTake = int(numberOfIntervals + 1)
+    # endTime = int(numberOfIntervals + 1)
 
-    startTime = earliestStart + timedelta(seconds=remainingTime / 2)
+    # startTime = earliestStart + timedelta(seconds=remainingTime / 2)
 
-    return startTime, numberOfPhotographsToTake
+    return earliestStart, latestFinish
