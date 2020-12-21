@@ -32,8 +32,8 @@ longitude: -75.048359
 # longitude: -75.361184
 
 # Working Start/ Working Finish
-workingStart: "6:00"
-workingFinish: "11:00"
+workingStart: "13:01"
+workingFinish: "13:10"
 
 #####################
 # Advanced settings #

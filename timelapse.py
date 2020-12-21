@@ -15,6 +15,7 @@ from pathlib import Path
 from sunriseSunset import calculateStartTimeAndEndTimes
 from dropboxTransfer import dropboxUploader, dropboxGetFileDownloadLinks
 from sendEMail import sendEMail
+from livestream import checkForLivestreamCommand
 
 testing = 0  # 1 for TruePath.joinpath(stillsDirectory (i.e., testing), 0 for False
 if testing:
@@ -79,8 +80,9 @@ def capture_images(stillsDirectory, initiationDateString, endTime):
         else:
             interval = config["interval"]
 
-        print(datetime.utcnow().replace(tzinfo=pytz.utc), endTime)
-        while datetime.utcnow().replace(tzinfo=pytz.utc) < endTime:
+        # print(datetime.utcnow().replace(tzinfo=pytz.utc), endTime)
+        lastPictureCaptureTime = datetime.utcnow().replace(tzinfo=pytz.utc)
+        while lastPictureCaptureTime < endTime:
 
             # Set a timer to take another picture at the proper interval after this
             # picture is taken.
@@ -90,7 +92,7 @@ def capture_images(stillsDirectory, initiationDateString, endTime):
             # Start up the camera.
             camera = PiCamera()
             set_camera_options(camera)
-
+            
             # Capture a picture.
             camera.capture(
                 str(stillsDirectory)
@@ -105,9 +107,15 @@ def capture_images(stillsDirectory, initiationDateString, endTime):
             image_number += 1
 
             # print(time.localtime(), image_number, total_images)
+            for i in range((interval - 1) // 5):
+                print("Checking for livestream command")
+                checkForLivestreamCommand()
+                time.sleep(5)
 
-            time.sleep(interval)
-
+            currentTime = datetime.utcnow().replace(tzinfo=pytz.utc)
+            if currentTime < lastPictureCaptureTime + timedelta(0, interval):
+                time.sleep((lastPictureCaptureTime + timedelta(0, interval) - currentTime).total_seconds())
+                
         # else:
         print("\nTime-lapse capture complete!\n")
         # TODO: This doesn't pop user into the except block below :(.
