@@ -15,18 +15,29 @@ from pathlib import Path
 from sunriseSunset import calculateStartTimeAndEndTimes
 from dropboxTransfer import dropboxUploader, dropboxGetFileDownloadLinks
 from sendEMail import sendEMail
-from livestream import checkForLivestreamCommand
+from checkSQS import checkSQSforGoLiveCommand
+from config import STREAM_TOKEN
 
-testing = 0  # 1 for TruePath.joinpath(stillsDirectory (i.e., testing), 0 for False
+testing = 1 # 1 for TruePath.joinpath(stillsDirectory (i.e., testing), 0 for False
 if testing:
     takeNewPhotos = 1  # 1 for True (i.e., take photos), 0 for False
     currentTime = datetime.utcnow().replace(tzinfo=pytz.utc)
     # currentTime = datetime.now()
     # print(currentTime)
-    endTimeWhenTesting = currentTime + timedelta(0, 103) # Adds 103 seconds/ photos
+    endTimeWhenTesting = currentTime + timedelta(0, 223) # Adds X seconds/ photos
+    print(currentTime, endTimeWhenTesting)
 
 config = yaml.safe_load(open(os.path.join(sys.path[0], "config.yml")))
 image_number = 0
+
+# LIVESTREAM_COMMAND = "raspivid -o - -t 0 -vf -hf -fps 24 -b 4500000 -rot 180 | ffmpeg -re -an -f s16le -i /dev/zero -i - -vcodec copy -acodec aac -ab 384k -g 17 -strict experimental -f flv -t 300 rtmp://live-jfk.twitch.tv/app/"
+
+LIVESTREAM_COMMAND = "raspivid -o - -t 0 -vf -hf -fps 24 -b 4500000 -rot 180 | ffmpeg -re -an -f s16le -i /dev/zero -i - -vcodec copy -acodec aac -ab 384k -g 17 -strict experimental -f flv -t "
+if testing:
+    LIVESTREAM_DURATION = config["livestream_testing_duration"]
+else:
+    LIVESTREAM_DURATION = config["livestream_duration"]
+TWITCH_ADDRESS = " rtmp://live-jfk.twitch.tv/app/"
 
 
 def create_timestamped_dir(stillsDirectory):
@@ -81,14 +92,18 @@ def capture_images(stillsDirectory, initiationDateString, endTime):
             interval = config["interval"]
 
         # print(datetime.utcnow().replace(tzinfo=pytz.utc), endTime)
-        lastPictureCaptureTime = datetime.utcnow().replace(tzinfo=pytz.utc)
-        while lastPictureCaptureTime < endTime:
+        while datetime.utcnow().replace(tzinfo=pytz.utc) < endTime:
 
             # Set a timer to take another picture at the proper interval after this
             # picture is taken.
             # if image_number < (config["total_images"] - 1):
             #     thread = threading.Timer(config["interval"], capture_images).start()
 
+            lastPictureCaptureTime = datetime.utcnow().replace(tzinfo=pytz.utc)
+            n = 10 if testing else 100
+            if image_number % n == 0:
+                print(f"Taking picture #{image_number}")
+                print(f"Time of latest picture: {lastPictureCaptureTime}, End of timelapse: {endTime}\n")
             # Start up the camera.
             camera = PiCamera()
             set_camera_options(camera)
@@ -107,9 +122,12 @@ def capture_images(stillsDirectory, initiationDateString, endTime):
             image_number += 1
 
             # print(time.localtime(), image_number, total_images)
-            for i in range((interval - 1) // 5):
-                print("Checking for livestream command")
-                checkForLivestreamCommand()
+            print("Checking for livestream command")
+            for i in range((interval - 1) // 5 if (interval - 1) // 5 > 1 else 1):
+                if checkSQSforGoLiveCommand():
+                    print("\nWe're going Live!\n")
+                    os.system(LIVESTREAM_COMMAND + str(LIVESTREAM_DURATION) + TWITCH_ADDRESS + STREAM_TOKEN)
+                    # sleep(LIVESTREAM_DURATION + 2)
                 time.sleep(5)
 
             currentTime = datetime.utcnow().replace(tzinfo=pytz.utc)
@@ -211,12 +229,14 @@ def main():
 
     startTime, endTime = calculateStartTimeAndEndTimes()
 
+
     # print(f"Scheduling the timelapse to start at")
     # print(f"Sleeping for {startTime} seconds.\n")
     currentTime = datetime.utcnow().replace(tzinfo=pytz.utc)
     if testing:
-        initialSleep = 0
+        initialSleep = 3
         endTime = endTimeWhenTesting
+        print(f"endTime = {endTime}")
     else:
         initialSleep = (
             (startTime - currentTime).total_seconds()

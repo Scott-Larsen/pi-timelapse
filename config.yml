@@ -23,6 +23,11 @@ create_meta_video: True
 # Whether to create an video after capturing the time-lapse images.
 create_video: True
 
+# Livestream duration in seconds
+livestream_duration: 300
+livestream_test_duration: 80
+
+
 # GPS Location
 # Lahaska
 latitude: 40.351138
@@ -32,8 +37,8 @@ longitude: -75.048359
 # longitude: -75.361184
 
 # Working Start/ Working Finish
-workingStart: "13:01"
-workingFinish: "13:10"
+workingStart: "6:00"
+workingFinish: "11:00"
 
 #####################
 # Advanced settings #
