@@ -18,23 +18,19 @@ from sendEMail import sendEMail
 from checkSQS import checkSQSforGoLiveCommand
 from config import STREAM_TOKEN
 
-testing = 1 # 1 for TruePath.joinpath(stillsDirectory (i.e., testing), 0 for False
+testing = 0  # 1 for TruePath.joinpath(stillsDirectory (i.e., testing), 0 for False
 if testing:
     takeNewPhotos = 1  # 1 for True (i.e., take photos), 0 for False
     currentTime = datetime.utcnow().replace(tzinfo=pytz.utc)
-    # currentTime = datetime.now()
-    # print(currentTime)
-    endTimeWhenTesting = currentTime + timedelta(0, 223) # Adds X seconds/ photos
+    endTimeWhenTesting = currentTime + timedelta(0, 223)  # Adds X seconds/ photos
     print(currentTime, endTimeWhenTesting)
 
 config = yaml.safe_load(open(os.path.join(sys.path[0], "config.yml")))
 image_number = 0
 
-# LIVESTREAM_COMMAND = "raspivid -o - -t 0 -vf -hf -fps 24 -b 4500000 -rot 180 | ffmpeg -re -an -f s16le -i /dev/zero -i - -vcodec copy -acodec aac -ab 384k -g 17 -strict experimental -f flv -t 300 rtmp://live-jfk.twitch.tv/app/"
-
 LIVESTREAM_COMMAND = "raspivid -o - -t 0 -vf -hf -fps 24 -b 4500000 -rot 180 | ffmpeg -re -an -f s16le -i /dev/zero -i - -vcodec copy -acodec aac -ab 384k -g 17 -strict experimental -f flv -t "
 if testing:
-    LIVESTREAM_DURATION = config["livestream_testing_duration"]
+    LIVESTREAM_DURATION = config["livestream_test_duration"]
 else:
     LIVESTREAM_DURATION = config["livestream_duration"]
 TWITCH_ADDRESS = " rtmp://live-jfk.twitch.tv/app/"
@@ -87,27 +83,24 @@ def capture_images(stillsDirectory, initiationDateString, endTime):
         global image_number
 
         if testing:
-            interval = 1 #, endTime = 1, currentTime + 103
+            interval = 1  # , endTime = 1, currentTime + 103
         else:
             interval = config["interval"]
 
-        # print(datetime.utcnow().replace(tzinfo=pytz.utc), endTime)
         while datetime.utcnow().replace(tzinfo=pytz.utc) < endTime:
-
-            # Set a timer to take another picture at the proper interval after this
-            # picture is taken.
-            # if image_number < (config["total_images"] - 1):
-            #     thread = threading.Timer(config["interval"], capture_images).start()
 
             lastPictureCaptureTime = datetime.utcnow().replace(tzinfo=pytz.utc)
             n = 10 if testing else 100
             if image_number % n == 0:
                 print(f"Taking picture #{image_number}")
-                print(f"Time of latest picture: {lastPictureCaptureTime}, End of timelapse: {endTime}\n")
+                print(
+                    f"Time of latest picture: {lastPictureCaptureTime}, End of timelapse: {endTime}\n"
+                )
+
             # Start up the camera.
             camera = PiCamera()
             set_camera_options(camera)
-            
+
             # Capture a picture.
             camera.capture(
                 str(stillsDirectory)
@@ -115,29 +108,32 @@ def capture_images(stillsDirectory, initiationDateString, endTime):
                 + initiationDateString
                 + "-{0:05d}.jpg".format(image_number)
             )
-            # camera.capture(dir + f"/image{image_number}.jpg")
+
             camera.close()
 
-            # if image_number < (config["total_images"] - 1):
             image_number += 1
 
-            # print(time.localtime(), image_number, total_images)
             print("Checking for livestream command")
             for i in range((interval - 1) // 5 if (interval - 1) // 5 > 1 else 1):
                 if checkSQSforGoLiveCommand():
                     print("\nWe're going Live!\n")
-                    os.system(LIVESTREAM_COMMAND + str(LIVESTREAM_DURATION) + TWITCH_ADDRESS + STREAM_TOKEN)
-                    # sleep(LIVESTREAM_DURATION + 2)
+                    os.system(
+                        LIVESTREAM_COMMAND
+                        + str(LIVESTREAM_DURATION)
+                        + TWITCH_ADDRESS
+                        + STREAM_TOKEN
+                    )
                 time.sleep(5)
 
             currentTime = datetime.utcnow().replace(tzinfo=pytz.utc)
             if currentTime < lastPictureCaptureTime + timedelta(0, interval):
-                time.sleep((lastPictureCaptureTime + timedelta(0, interval) - currentTime).total_seconds())
-                
-        # else:
+                time.sleep(
+                    (
+                        lastPictureCaptureTime + timedelta(0, interval) - currentTime
+                    ).total_seconds()
+                )
+
         print("\nTime-lapse capture complete!\n")
-        # TODO: This doesn't pop user into the except block below :(.
-        # sys.exit()
 
     except (KeyboardInterrupt):  # , SystemExit):
         print("\nTime-lapse capture cancelled.\n")
@@ -153,10 +149,6 @@ def create_animated_gif():
 def create_video(stillsDirectory, initiationDateString, timelapseFullPath):
     print("\nCreating video (within the create_video function).\n")
 
-    # ffmpeg -r 24 -i 2020-11-18-timelapse/image%05d.jpg -c:v libx264 -vf fps=24 2020-11-18-timelapse.mp4
-    # ffmpeg -r 24 -i /home/pi/pi-timelapse/2020-11-22-timelapse/image%05d.jpg -c:v libx265 -crf 28 /home/pi/pi-timelapse/2020-11-22-timelapse.mp4
-    # 2020-11-22-00006.jpg
-
     command = (
         "ffmpeg -r 24 -i "
         + str(stillsDirectory)
@@ -170,19 +162,7 @@ def create_video(stillsDirectory, initiationDateString, timelapseFullPath):
     os.system(command)
 
 
-def create_meta_video(
-    initiationDateString, workingDirectory, stillsDirectory, endTime
-):
-
-    # src_dir = os.getcwd() #get the current working dir
-    # print(src_dir)
-
-    # create a dir where we want to copy and rename
-    # dest_dir = os.mkdir('subfolder')
-    # os.listdir()
-    # endTime
-    # src_dir = stillsDirectory
-    # endTime = 103
+def create_meta_video(initiationDateString, workingDirectory, stillsDirectory, endTime):
 
     dest_dir = Path.joinpath(workingDirectory, "metaTimelapse")
 
@@ -190,28 +170,14 @@ def create_meta_video(
     files.sort()
     lastPhotographNumber = int(files[-1][-9:-4])
 
-    for i in range(
-        lastPhotographNumber // 50 + 50, lastPhotographNumber - 50, 50
-    ):
+    for i in range(lastPhotographNumber // 50 + 50, lastPhotographNumber - 50, 50):
         filename = initiationDateString + "-" + str(i).zfill(5) + ".jpg"
         src_file = Path.joinpath(stillsDirectory, filename)
         shutil.copy(src_file, dest_dir)  # copy the file to destination dir
 
-        # dst_file = os.path.join(dest_dir, filename)
-        # new_dst_file_name = os.path.join(dest_dir, fileFolderName + "-" + filename)
-
-        # os.rename(dst_file, new_dst_file_name)  # rename
-    # Delete the metaTimelapse.mp4 to make way for the new one.
-    # send2trash("metaTimelapse.mp4")
-
     command = 'ffmpeg -r 24 -pattern_type glob -i "metaTimelapse/*.jpg" -c:v libx264 -vf fps=24 metaTimelapse.mp4'
 
-    # print(dir)
     os.system(command)
-
-    # os.chdir(dest_dir)
-
-    # print(os.listdir())
 
 
 def uploadDailyImageFolders():
@@ -229,9 +195,6 @@ def main():
 
     startTime, endTime = calculateStartTimeAndEndTimes()
 
-
-    # print(f"Scheduling the timelapse to start at")
-    # print(f"Sleeping for {startTime} seconds.\n")
     currentTime = datetime.utcnow().replace(tzinfo=pytz.utc)
     if testing:
         initialSleep = 3
@@ -281,25 +244,6 @@ def main():
         create_video(stillsDirectory, initiationDateString, timelapseFullPath)
         print("Daily timelapse video created.\n")
 
-        # Print all folders in the directory
-        # print("os.listdir(workingDirectory) =:")
-        # print(os.listdir(workingDirectory))
-        # dir = os.path.join(sys.path[0], fileFolderName)
-
-        # print(
-        #     str(stillsDirectory)
-        #     + " exists - "
-        #     + str(os.path.exists(stillsDirectory))
-        #     + "\n"
-        #     + str(timelapseFilename)
-        #     + " exists - "
-        #     + str(os.path.exists(timelapseFullPath))
-        #     + "\n"
-        #     + "metaTimelapse exists - "
-        #     + str(os.path.exists(workingDirectory / "metaTimelapse"))
-        #     + "\n"
-        # )
-
         print(
             f"Uploading {timelapseFilename} to Dropbox at "
             + datetime.utcnow().strftime("%Y-%m-%d %H:%m:%s")
@@ -319,11 +263,7 @@ def main():
             endTime,
         )
         print("MetaTimelapse updated")
-        # print(
-        #     "metaTimelapse.mp4 exists - "
-        #     + str(os.path.exists(workingDirectory / "metaTimelapse.mp4"))
-        #     + "\n"
-        # )
+
         dropboxUploader("metaTimelapse.mp4", "overwrite")
         send2trash("metaTimelapse.mp4")
         print("MetaTimelapse uploaded to Dropbox and deleted from Raspberry Pi\n")

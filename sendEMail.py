@@ -16,11 +16,22 @@ def sendEMail(links):
 
     subject = f"New construction video uploaded!"
 
+    # print(links)
+
+    # Find metaTimelapse link
+    for link in links:
+        if "metaTimelapse" in link:
+            metaTimelapseFilename = link
+            break
+
+    i = links.index(metaTimelapseFilename)
+    metaTimelapseLink = links.pop(i)
+
     body = (
         "Today's video:\n"
-        + links.pop(-2)
-        + "\n\nOverall project timelapse:\n"
         + links.pop()
+        + "\n\nOverall project timelapse:\n"
+        + metaTimelapseLink
         + "\n\nPrevious days' videos:\n"
         + "\n".join(links)
     )
