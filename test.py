@@ -1,5 +1,3 @@
-import os
+r = {"MD5OfMessageBody":"9d4a65e544c52a07b2b17c488083c0ed","MessageId":"c5fd8f95-116d-4fc2-bb91-613a14a6fe21","ResponseMetadata":{"HTTPHeaders":{"content-length":"378","content-type":"text/xml","date":"Tue, 22 Dec 2020 17:19:30 GMT","x-amzn-requestid":"0a88b998-a660-5482-a4f9-e1c48a823778"},"HTTPStatusCode":200,"RequestId":"0a88b998-a660-5482-a4f9-e1c48a823778","RetryAttempts":0}}
 
-files = os.listdir()
-
-print(files)
+print(r['ResponseMetadata']['HTTPStatusCode'])
