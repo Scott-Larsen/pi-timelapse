@@ -2,7 +2,7 @@ from datetime import datetime
 import pytz
 import smtplib
 
-from config import USER, PASS, EMAIL
+from config import USER, PASS, FROM_EMAIL, TO_EMAIL
 
 
 def sendEMail(links):
@@ -14,7 +14,7 @@ def sendEMail(links):
 
     server.login(USER, PASS)
 
-    subject = f"New construction video uploaded!"
+    subject = f"New construction video uploaded."
 
     # print(links)
 
@@ -45,9 +45,9 @@ def sendEMail(links):
     #     body += "\nNo results."
     # body = body.encode("ascii", "ignore").decode("ascii")  # last working
 
-    msg = f"Subject: {subject}\n\n{body}"
-
-    server.sendmail(EMAIL, EMAIL, msg)
+    for email in TO_EMAIL:
+        msg = f"From: {FROM_EMAIL}\r\nTo: {email}\r\nSubject: {subject}\n\n{body}"
+        server.sendmail(FROM_EMAIL, email, msg)
 
     timeZone_NY = pytz.timezone("America/NEW_York")
     datetime_NY = datetime.now(timeZone_NY)
@@ -56,6 +56,18 @@ def sendEMail(links):
     server.quit()
 
 
+links = [
+    "https://www.dropbox.com/s/3wsltnew4gcvfdo/2020-12-26-timelapse.mp4?dl=0",
+    "https://www.dropbox.com/s/6cq30esswmp5yv5/metaTimelapse.mp4?dl=0",
+    "https://www.dropbox.com/s/c2q5clcfze1bc9m/2020-12-18-timelapse.mp4?dl=0",
+    "https://www.dropbox.com/s/ouh2q3yf4dq5gnv/2020-12-19-timelapse.mp4?dl=0",
+    "https://www.dropbox.com/s/5bmwhb1fucp72lu/2020-12-20-timelapse.mp4?dl=0",
+    "https://www.dropbox.com/s/8y6fe08vvnnq52e/2020-12-24-timelapse.mp4?dl=0",
+    "https://www.dropbox.com/s/98gr44m08w4x6jb/2020-12-25-timelapse.mp4?dl=0",
+]
+
+if __name__ == "__main__":
+    sendEMail(links)
 # sendEMail(
 #     [
 #         "https://www.dropbox.com/s/a5eibgl74y1w5xk/series-2020-11-12-timelapse.mp4?dl=0",
