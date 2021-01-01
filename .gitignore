@@ -7,4 +7,5 @@ log.txt
 ARCHIVE/
 __pycache__/
 screenRecording*
-
+*-timelapse/
+dropboxTransfer-Attempt-to-delete-duplicate-access-key-calls.py
