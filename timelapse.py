@@ -20,10 +20,11 @@ from config import STREAM_TOKEN
 
 testing = 0  # 1 for TruePath.joinpath(stillsDirectory (i.e., testing), 0 for False
 if testing:
+    print("Running in test mode.")
     takeNewPhotos = 1  # 1 for True (i.e., take photos), 0 for False
     currentTime = datetime.utcnow().replace(tzinfo=pytz.utc)
     endTimeWhenTesting = currentTime + timedelta(0, 223)  # Adds X seconds/ photos
-    print(currentTime, endTimeWhenTesting)
+    # print(currentTime, endTimeWhenTesting)
 
 config = yaml.safe_load(open(os.path.join(sys.path[0], "config.yml")))
 image_number = 0
@@ -192,10 +193,10 @@ def uploadDailyImageFolders():
 
 
 def main():
-
     startTime, endTime = calculateStartTimeAndEndTimes()
 
     currentTime = datetime.utcnow().replace(tzinfo=pytz.utc)
+
     if testing:
         initialSleep = 3
         endTime = endTimeWhenTesting
