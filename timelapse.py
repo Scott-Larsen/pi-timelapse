@@ -1,15 +1,14 @@
 #!/usr/bin/python3
 
-from picamera import PiCamera
 import errno
 import os
 import sys
-from datetime import datetime, timedelta
-from time import sleep
 import yaml
-import time
 import pytz
 import shutil
+from picamera import PiCamera
+from datetime import datetime, timedelta
+from time import sleep
 from send2trash import send2trash
 from pathlib import Path
 from sunriseSunset import calculateStartTimeAndEndTimes
@@ -18,16 +17,18 @@ from sendEMail import sendEMail
 from checkSQS import checkSQSforGoLiveCommand
 from config import STREAM_TOKEN
 
-testing = 0  # 1 for TruePath.joinpath(stillsDirectory (i.e., testing), 0 for False
-if testing:
-    print("Running in test mode.")
-    takeNewPhotos = 1  # 1 for True (i.e., take photos), 0 for False
-    currentTime = datetime.utcnow().replace(tzinfo=pytz.utc)
-    endTimeWhenTesting = currentTime + timedelta(0, 223)  # Adds X seconds/ photos
-    # print(currentTime, endTimeWhenTesting)
 
 config = yaml.safe_load(open(os.path.join(sys.path[0], "config.yml")))
 image_number = 0
+
+testing = config["testing"]
+if testing:
+    print("Running in test mode.")
+    takeNewPhotos = config["take_new_photos_in_testing"]
+    currentTime = datetime.utcnow().replace(tzinfo=pytz.utc)
+    endTimeWhenTesting = currentTime + timedelta(
+        0, 223
+    )  # Second number adds X seconds/ photos
 
 LIVESTREAM_COMMAND = "raspivid -o - -t 0 -vf -hf -fps 24 -b 4500000 -rot 180 | ffmpeg -re -an -f s16le -i /dev/zero -i - -vcodec copy -acodec aac -ab 384k -g 17 -strict experimental -f flv -t "
 if testing:
@@ -84,7 +85,7 @@ def capture_images(stillsDirectory, initiationDateString, endTime):
         global image_number
 
         if testing:
-            interval = 1  # , endTime = 1, currentTime + 103
+            interval = 1
         else:
             interval = config["interval"]
 
@@ -124,11 +125,11 @@ def capture_images(stillsDirectory, initiationDateString, endTime):
                         + TWITCH_ADDRESS
                         + STREAM_TOKEN
                     )
-                time.sleep(5)
+                sleep(5)
 
             currentTime = datetime.utcnow().replace(tzinfo=pytz.utc)
             if currentTime < lastPictureCaptureTime + timedelta(0, interval):
-                time.sleep(
+                sleep(
                     (
                         lastPictureCaptureTime + timedelta(0, interval) - currentTime
                     ).total_seconds()
@@ -136,15 +137,8 @@ def capture_images(stillsDirectory, initiationDateString, endTime):
 
         print("\nTime-lapse capture complete!\n")
 
-    except (KeyboardInterrupt):  # , SystemExit):
+    except (KeyboardInterrupt):
         print("\nTime-lapse capture cancelled.\n")
-
-
-def create_animated_gif():
-    print("\nCreating animated gif.\n")
-    os.system(
-        "convert -delay 10 -loop 0 " + dir + "/image*.jpg " + dir + "-timelapse.gif"
-    )
 
 
 def create_video(stillsDirectory, initiationDateString, timelapseFullPath):
@@ -208,7 +202,7 @@ def main():
             else 0
         )
     print(f"Sleeping for {int(initialSleep)} seconds.\n")
-    time.sleep(initialSleep)
+    sleep(initialSleep)
 
     # Create directory based on current timestamp.
     if testing:
@@ -236,10 +230,6 @@ def main():
 
         print("Captured all of the images.\n")
 
-    # Create an animated gif (Requires ImageMagick).
-    if config["create_gif"]:
-        create_animated_gif()
-
     # Create a video (Requires ffmpeg).
     if config["create_video"]:
         create_video(stillsDirectory, initiationDateString, timelapseFullPath)
@@ -250,11 +240,14 @@ def main():
             + datetime.utcnow().strftime("%Y-%m-%d %H:%m:%s")
             + " UTC\n"
         )
-        dropboxUploader(timelapseFilename)
-        send2trash(timelapseFilename)
-        print(
-            "Uploaded daily timelapse video to Dropbox and deleted if from Raspberry Pi\n"
-        )
+        try:
+            dropboxUploader(timelapseFilename)
+            send2trash(timelapseFilename)
+            print(
+                "Uploaded daily timelapse video to Dropbox and deleted it from Raspberry Pi\n"
+            )
+        except:
+            print("Daily timelapse failed to upload to Dropbox")
 
     if config["create_meta_video"]:
         create_meta_video(
@@ -265,12 +258,15 @@ def main():
         )
         print("MetaTimelapse updated")
 
-        dropboxUploader("metaTimelapse.mp4", "overwrite")
-        send2trash("metaTimelapse.mp4")
-        print("MetaTimelapse uploaded to Dropbox and deleted from Raspberry Pi\n")
+        try:
+            dropboxUploader("metaTimelapse.mp4", "overwrite")
+            send2trash("metaTimelapse.mp4")
+            print("MetaTimelapse uploaded to Dropbox and deleted from Raspberry Pi\n")
+        except:
+            print("MetaTimelapse failed to upload to Dropbox")
 
+    # Send e-mail about new video being uploaded to Dropbox
     if config["create_video"] or config["create_meta_video"]:
-        # Send e-mail about new video being uploaded to Dropbox
         dropboxFileDownloadLinks = dropboxGetFileDownloadLinks()
         sendEMail(dropboxFileDownloadLinks)
 
