@@ -3,41 +3,30 @@
 # Basic Settings #
 ##################
 
-# Image resolution Set to empty object (`{ }`) to use default resolution.
-resolution:
-  width: 1920
-  height: 1080
+testing: 0  # 1 for True
+take_new_photos_in_testing: 1    # 1 for True (i.e., take photos), 0 for False
 
 # Livestream duration in seconds
 livestream_duration: 300
 livestream_test_duration: 80
 
-# The number of images to capture.
-total_images: 40
-
 # The interval between captures (in seconds).
 interval: 30
-
-# Whether to create an animated gif after capturing the time-lapse images.
-create_gif: False
-
-# Whether to create an video after capturing the time-lapse images.
-create_meta_video: True
 
 # Whether to create an video after capturing the time-lapse images.
 create_video: True
 
-# GPS Location
-# Lahaska
-latitude: 40.351138
-longitude: -75.048359
-# Lake
-# latitude: 41.389493
-# longitude: -75.361184
+# Whether to create an video after capturing the time-lapse images.
+create_meta_video: True
 
-# Working Start/ Working Finish
+# Working Start/ Finish - timelapse will take the more restrictive of this and sunrise/ sunset
 workingStart: "6:00"
 workingFinish: "17:00"
+
+# Image resolution Set to empty object (`{ }`) to use default resolution.
+resolution:
+  width: 1920
+  height: 1080
 
 #####################
 # Advanced settings #
