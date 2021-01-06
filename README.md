@@ -1,8 +1,8 @@
 # Construction Cam
 
-This is a timelapse camera/ app designed to monitor construction progress at a remote site. If you have access to the internet at the jobsite you'll be able to receive daily timelapse videos, 'metatimelapses' of the entire project as well as to trigger livestreaming to Twitch from a [companion Flask app]("https://github.com/Scott-Larsen/pi-timelapse-flask-app") for up to the moment updates.
+This is a timelapse camera/ app designed to monitor construction progress at a remote site. If you have access to the internet at the jobsite you'll be able to receive daily timelapse videos, 'metatimelapses' of the entire project as well as to trigger livestreaming to Twitch from a [companion Flask app](https://github.com/Scott-Larsen/pi-timelapse-flask-app) for up to the moment updates.
 
-This project is built off of the excellent [Raspberry Pi Time-Lapse App]("https://github.com/geerlingguy/pi-timelapse") by [Jeff Geerling]("https://www.youtube.com/c/JeffGeerling"), without whom I'm not sure that I could have pulled it all together.
+This project is built off of the excellent [Raspberry Pi Time-Lapse App](https://github.com/geerlingguy/pi-timelapse) by [Jeff Geerling](https://www.youtube.com/c/JeffGeerling), without whom I'm not sure that I could have pulled it all together.
 
 There are many steps in the process and I'm sure I'll leave something out so feel free to get in touch if something is not clear. I've been working with a Raspberry Pi 3 Model B+ and Camera Module V2 so I can't account for other combinations of Pi hardware.
 
@@ -31,25 +31,28 @@ Now, set up the timelapse app on your Raspberry Pi:
 
 After the capture is completed, the images will be stored in a directory named `<date>-timelapse`.
 
-### Triggering the Raspberry Pi daily
 
-In order to get the timelapse to run daily it's necessary to set a cronjob on the Raspberry Pi. In the terminal type the following:
+### Triggering the Raspberry Pi daily, software updates and Pi restarts using crontab
+
+The best way I could find to get the timelapse to run daily was to set a cronjob on the Raspberry Pi. In the terminal type the following:
 
 `crontab -e`
 
 In the editor window that opens, enter the following command:
 
-`ENTER COMMAND`
+```4 10 * * * cd /home/pi/pi-timelapse && /usr/bin/python3 timelapse.py >> /home/pi/pi-timelapse/log.txt```
 
-This will start the script at \***\*5AM\*\*** every day, before the earliest sunrise of the year. Incidentally, the project was built on the understanding that the Raspberry Pi's clock was not set away from UTC and I am on Eastern US Time Zone (UTC-05:00 - New York) so you may have to make adjustments to the trigger times for your location.
+The project assumes that you haven't changed the clock on the Pi so it should be set to UTC.  This means that at 4:10 ([AM] UTC [~1AM in New York]) it navigates to the /home/pi/pi-timelapse folder (change <username> `pi` and project folder `pi-timelapse` as necessary) and using python3 executes `timelapse.py`.  The logging that you'd normally see in the terminal is written to `log.txt` within the project directory which you can check if things go wrong.
 
-While we're editing the crontab, and since the Raspberry Pi will be at a remote site and inaccessible to me, I wanted to add a second command to restart the Pi once a day to make sure it recovered if it had any issue. Because of that I also entered:
+Because I'd have this setup at a remote location without direct access into the network with the Pi I also wanted it to be able to pull updates from GitHub.  I wrote the `gitPuller.py` script and have it run daily.
 
-`ENTER COMMAND`
+```3 10 * * * cd /home/pi/pi-timelapse && /usr/bin/python3 gitPuller.py >> /home/pi/pi-timelapse/pullLog.txt```
 
-This will restart the pi once a day at **\***AM**\***
+And since I knew problems would develop over time and I won't be around to restart the Pi I run this command to restart the Pi daily.
 
-When you've entered both commands, close and save the file (`control-x` and `control-s` in Nano).
+````3 40 * * * /sbin/shutdown -r now```
+
+When you've entered all of the commands, close and save the crontab file (`control-x` and `S` in Nano).
 
 ## Creating videos and 'metatimelapses'
 
@@ -57,13 +60,48 @@ When you've entered both commands, close and save the file (`control-x` and `con
 
 Requirements: You should install [FFmpeg](https://ffmpeg.org) — `sudo apt-get -y install ffmpeg`)
 
-If you have `create_video` set to `True` in `config.yml`, the Pi will also generate a video immediately following the conclusion of the capture.
+If you have `create_video` set to `True` in `config.yml`, the Pi will also generate a video immediately following the conclusion of the still captures.
 
 > Note: Video generation can take a very long time on slower Pis, like the Pi Zero, A+, or original A or B.
 
 ### Metatimelapses
 
-If you'd like a 'metatimelapse' - a timelapse spanning the entire length of the project, set `create_metatimelapse` to `True` in `config.yml`.
+If you'd like a 'metatimelapse' - a timelapse spanning the entire length of the project - set `create_metatimelapse` to `True` in `config.yml`.
+
+### Uploading files to Dropbox
+
+In order to get the files from the Pi, I upload them to my personal Dropbox account and then set a cronjob on my laptop to download them.
+
+<!-- https://www.dropbox.com/developers/apps
+
+`Scoped access` > `App folder`
+
+You'll need to copy the `App key` and `App secret` and enter them in the config.py file.
+
+`Permissions` tab and `Files and folders` make sure that `files.content.write` and `files.content.read` -->
+
+### Sending e-mail notifications
+
+I built this with a client in mind so wanted a way to alert them about updates nightly.  The script is built around using a gmail account so you're going to have to sign up for an app password for gmail and enter your credentials in `config.py`.  You can find directions for setting up an app password at [https://support.google.com/accounts/answer/185833?hl=en](https://support.google.com/accounts/answer/185833?hl=en).  The `TO_EMAIL` field is a list and can include multiple e-mail addresses to which you want to send e-mail updates.
+
+### Downloading the files from Dropbox
+
+Once again I'm using a cronjob, this time on my laptop, to download the files from Dropbox using `dropboxDownloader.py` (which, in turn, uses `dropboxTransfer.py`).  
+<!-- Be sure your computer has a copy of the `config.py` file on your computer with the Dropbox credentials in it (without putting it up on Github) -->
+
+Again, invoke `crontab -e` and enter the following code making the necessary adjustments for your file paths.
+
+55 */6 * * *  python3 /Users/PATH-TO-PROJECT/pi-timelapse/dropboxDownloader.py >> /Users/PATH-TO-PROJECT/pi-timelapse/downloadLog.txt
+
+### Livestreaming from the Raspberry Pi
+
+The final feature of the app is that, during the hours that it's filming a timelapse, you can prompt it to broadcast live video via Twitch that you can watch from anywhere on your phone or computer.  Enabling this capability requires setting up a Twitch account and an Amazon/ AWS SQS (Simple Queue Service) and enter those details in `config.py`
+
+I believe getting the Twitch streaming key involves signing up for a standard account and then going to `https://dashboard.twitch.tv/u/USERNAME/settings/channel` (replacing *USERNAME* with your username) and copying the `Primary Stream key` at the top.
+
+With AWS, if you don't already have an account for AWS you'll need to start by signing up for one.  You'll then want to navigate to [https://console.aws.amazon.com/sqs](https://console.aws.amazon.com/sqs) to create a Simple Queue Service (SQS).  This is where we set a boolean in the cloud that the Pi checks every 5 seconds to see whether you want it to go live.  You want to `create queue` in the upper-right corner and select `standard`.
+
+
 
 ### Manually Compiling Videos with `ffmpeg`
 
@@ -77,7 +115,11 @@ And if you wanted to start the video in the middle of the sequence (e.g. instead
 
 These commands assume you're inside the folder containing all the images, and output a file named `timelapse.mp4` in the same directory.
 
-## Manual Settings
+### Manual Settings
+
+The most important settings in terms of determining the timing for the timelapse are the GPS location of the project (saved in `config.py` for potential privacy concerns) and `workingStart` and `workingFinish` in `config.yml`, which represents the earliest and latest hours that the construction workers might work.  The app uses the GPS coordinates of the project to determine sunrise and sunset times and then chooses the latter of sunrise or `workingStart` and the earlier of sunset and `workingFinish` to start and end the timelapse each day.
+
+In order to get the GPS functionality to work you're going to have to sign up for a Google maps API account
 
 For a more pleasing timelapse, it's best to lock in manual settings for exposure and white balance (otherwise the video has a lot of inconsistency from frame to frame). This project allows almost complete control over manual exposure settings through variables in `config.yml`, and below are listed some rules of thumb for your own settings.
 

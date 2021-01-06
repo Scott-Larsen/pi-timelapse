@@ -2,13 +2,13 @@ import boto3
 import os
 from time import sleep
 
-from config import AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, SQS_URL  # , STREAM_TOKEN
+from config import AWS_REGION_NAME, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, SQS_URL
 
 import boto3
 
 client = boto3.client(
     "sqs",
-    region_name="us-east-2",
+    region_name=AWS_REGION_NAME,
     aws_access_key_id=AWS_ACCESS_KEY_ID,
     aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
 )

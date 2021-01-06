@@ -4,7 +4,7 @@ import os
 import sys
 import requests
 import yaml
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 import time
 from config import API_KEY, GPS_LOCATION
 

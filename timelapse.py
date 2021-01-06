@@ -3,9 +3,11 @@
 import errno
 import os
 import sys
-import yaml
+
+# import yaml
 import pytz
 import shutil
+from yaml import safe_load
 from picamera import PiCamera
 from datetime import datetime, timedelta
 from time import sleep
@@ -18,7 +20,7 @@ from checkSQS import checkSQSforGoLiveCommand
 from config import STREAM_TOKEN
 
 
-config = yaml.safe_load(open(os.path.join(sys.path[0], "config.yml")))
+config = safe_load(open(os.path.join(sys.path[0], "config.yml")))
 image_number = 0
 
 testing = config["testing"]
@@ -186,6 +188,12 @@ def uploadDailyImageFolders():
         print(f"Finished uploading {folder}.\n")
 
 
+def uploadLog():
+    print(f"Uploading log.txt\n")
+    dropboxUploader("log.txt")
+    send2trash("log.txt")
+
+
 def main():
     startTime, endTime = calculateStartTimeAndEndTimes()
 
@@ -271,6 +279,8 @@ def main():
         sendEMail(dropboxFileDownloadLinks)
 
     uploadDailyImageFolders()
+
+    uploadLog()
 
 
 if __name__ == "__main__":
