@@ -117,9 +117,13 @@ These commands assume you're inside the folder containing all the images, and ou
 
 ### Manual Settings
 
+## 
+Installing numpy
+`apt install python3-numpy`
+
 The most important settings in terms of determining the timing for the timelapse are the GPS location of the project (saved in `config.py` for potential privacy concerns) and `workingStart` and `workingFinish` in `config.yml`, which represents the earliest and latest hours that the construction workers might work.  The app uses the GPS coordinates of the project to determine sunrise and sunset times and then chooses the latter of sunrise or `workingStart` and the earlier of sunset and `workingFinish` to start and end the timelapse each day.
 
-In order to get the GPS functionality to work you're going to have to sign up for a Google maps API account
+In order to get the proper time throughout the year you're going to have to sign up for a Google maps API account to be able to get the time zone and daylight saving time updates for the GPS location. [https://developers.google.com/maps/documentation/timezone/get-api-key](https://developers.google.com/maps/documentation/timezone/get-api-key)
 
 For a more pleasing timelapse, it's best to lock in manual settings for exposure and white balance (otherwise the video has a lot of inconsistency from frame to frame). This project allows almost complete control over manual exposure settings through variables in `config.yml`, and below are listed some rules of thumb for your own settings.
 
