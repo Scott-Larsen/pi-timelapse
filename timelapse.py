@@ -259,10 +259,7 @@ def main():
 
     if config["create_meta_video"]:
         create_meta_video(
-            initiationDateString,
-            workingDirectory,
-            stillsDirectory,
-            endTime,
+            initiationDateString, workingDirectory, stillsDirectory, endTime,
         )
         print("MetaTimelapse updated")
 
@@ -280,7 +277,8 @@ def main():
 
     uploadDailyImageFolders()
 
-    uploadLog()
+    if os.path.exists("log.txt"):
+        uploadLog()
 
 
 if __name__ == "__main__":

@@ -3,8 +3,8 @@
 # Basic Settings #
 ##################
 
-testing: 0  # 1 for True
-take_new_photos_in_testing: 1    # 1 for True (i.e., take photos), 0 for False
+testing: 0 # 1 for True
+take_new_photos_in_testing: 1 # 1 for True (i.e., take photos), 0 for False
 
 # Working Start/ Finish - timelapse will take the more restrictive of this and sunrise/ sunset
 workingStart: "6:00"
