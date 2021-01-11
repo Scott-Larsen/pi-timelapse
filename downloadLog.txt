@@ -146,3 +146,39 @@ File successfully downloaded from Dropbox
 
 Downloading the file, metaTimelapse.mp4.
 
+2021-01-01-timelapse.mp4 is 8 days old.
+Deleting 2021-01-01-timelapse.mp4 from Dropbox.
+
+
+2021-01-03-timelapse.mp4 is 6 days old.
+2021-01-04-timelapse.mp4 is 5 days old.
+File downloading from Dropbox.
+
+File successfully downloaded from Dropbox
+
+Downloading the file, metaTimelapse.mp4.
+
+2021-01-03-timelapse.mp4 is 6 days old.
+2021-01-04-timelapse.mp4 is 6 days old.
+File downloading from Dropbox.
+
+File successfully downloaded from Dropbox
+
+Downloading the file, metaTimelapse.mp4.
+
+2021-01-03-timelapse.mp4 is 6 days old.
+2021-01-04-timelapse.mp4 is 6 days old.
+File downloading from Dropbox.
+
+File successfully downloaded from Dropbox
+
+Downloading the file, metaTimelapse.mp4.
+
+2021-01-03-timelapse.mp4 is 6 days old.
+2021-01-04-timelapse.mp4 is 6 days old.
+File downloading from Dropbox.
+
+File successfully downloaded from Dropbox
+
+Downloading the file, metaTimelapse.mp4.
+
