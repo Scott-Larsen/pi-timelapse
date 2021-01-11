@@ -3,8 +3,16 @@
 # Basic Settings #
 ##################
 
+<<<<<<< HEAD
 testing: 0 # 1 for True
 take_new_photos_in_testing: 1 # 1 for True (i.e., take photos), 0 for False
+||||||| merged common ancestors
+testing: 0  # 1 for True
+take_new_photos_in_testing: 1    # 1 for True (i.e., take photos), 0 for False
+=======
+testing: 1  # 1 for True
+take_new_photos_in_testing: 1    # 1 for True (i.e., take photos), 0 for False
+>>>>>>> fe821452a1126eb33e76eab4a5d5d7df11100708
 
 # Working Start/ Finish - timelapse will take the more restrictive of this and sunrise/ sunset
 workingStart: "6:00"
