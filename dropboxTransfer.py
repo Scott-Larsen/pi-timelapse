@@ -81,11 +81,11 @@ def dropboxUploader(fileOrFolderName, write_mode="add"):
     access_token = D_ACCESS_TOKEN
     transferData = TransferData(access_token)
 
-    print("File(s) uploading to Dropbox.\n")
+    print(f"{fileOrFolderName} uploading to Dropbox.\n")
 
     transferData.upload_file(fileOrFolderName, "/" + fileOrFolderName, write_mode)
 
-    print("File successfully uploaded to Dropbox\n")
+    print(f"{fileOrFolderName} successfully uploaded to Dropbox\n")
 
 
 def dropboxDownloader(filename, writePath):

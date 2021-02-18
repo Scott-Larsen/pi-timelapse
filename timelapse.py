@@ -3,10 +3,10 @@
 import errno
 import os
 import sys
-
-# import yaml
 import pytz
 import shutil
+import dropbox
+from time import time
 from yaml import safe_load
 from picamera import PiCamera
 from datetime import datetime, timedelta
@@ -17,7 +17,7 @@ from sunriseSunset import calculateStartTimeAndEndTimes
 from dropboxTransfer import dropboxUploader, dropboxGetFileDownloadLinks
 from sendEMail import sendEMail
 from checkSQS import checkSQSforGoLiveCommand
-from config import STREAM_TOKEN
+from config import STREAM_TOKEN, D_ACCESS_TOKEN
 
 
 config = safe_load(open(os.path.join(sys.path[0], "config.yml")))
@@ -29,10 +29,10 @@ if testing:
     takeNewPhotos = config["take_new_photos_in_testing"]
     currentTime = datetime.utcnow().replace(tzinfo=pytz.utc)
     endTimeWhenTesting = currentTime + timedelta(
-        0, 223
+        0, config["num_photos_testing"]
     )  # Second number adds X seconds/ photos
 
-LIVESTREAM_COMMAND = "raspivid -o - -t 0 -vf -hf -fps 24 -b 4500000 -rot 180 | ffmpeg -re -an -f s16le -i /dev/zero -i - -vcodec copy -acodec aac -ab 384k -g 17 -strict experimental -f flv -t "
+LIVESTREAM_COMMAND = "raspivid -o - -t 0 -vf -hf -fps 24 -b 4500000 -rot 180 | ffmpeg -re -an -f s16le -i /dev/zero -i - -vcodec copy -acodec aac -ab 384k -g 17 -strict experimental -f flv -t -hide_banner -loglevel error"
 if testing:
     LIVESTREAM_DURATION = config["livestream_test_duration"]
 else:
@@ -74,6 +74,10 @@ def set_camera_options(camera):
             config["white_balance"]["red_gain"],
             config["white_balance"]["blue_gain"],
         )
+
+    # Set exposure_compensation
+    if config["exposure_compensation"]:
+        camera.exposure_compensation = config["exposure_compensation"]
 
     # Set camera rotation
     if config["rotation"]:
@@ -117,8 +121,8 @@ def capture_images(stillsDirectory, initiationDateString, endTime):
 
             image_number += 1
 
-            print("Checking for livestream command")
-            for i in range((interval - 1) // 5 if (interval - 1) // 5 > 1 else 1):
+            for i in range((interval - 1) // 50 if (interval - 1) // 50 > 1 else 1):
+                print("Checking for livestream command")
                 if checkSQSforGoLiveCommand():
                     print("\nWe're going Live!\n")
                     os.system(
@@ -177,21 +181,41 @@ def create_meta_video(initiationDateString, workingDirectory, stillsDirectory, e
     os.system(command)
 
 
-def uploadDailyImageFolders():
+def uploadDailyImageFolders(tf):
     dailyImageSubfolders = [
         f.name for f in os.scandir() if f.is_dir() and "-timelapse" in f.name
     ]
     for folder in dailyImageSubfolders:
-        print(f"Uploading folder {folder}.\n")
-        dropboxUploader(folder)
-        send2trash(folder)
-        print(f"Finished uploading {folder}.\n")
+        if tf:
+            print(f"Uploading folder {folder}.\n")
+            dropboxUploader(folder)
+            send2trash(folder)
+            print(f"Finished uploading {folder}.\n")
+        else:
+            if time() - os.stat(folder).st_mtime > 7 * 24 * 60 * 60:
+                send2trash(folder)
+                print(f"Deleting {folder} from Dropbox.\n\n")
+
+
+def updateMetaTimelapseStills():
+    dbx = dropbox.Dropbox(D_ACCESS_TOKEN)
+    response = dbx.files_list_folder(path="/metaTimelapse")
+    filesOnDropbox = [file.name for file in response.entries]
+
+    metaTimelapseStillsOnPi = [
+        f.name for f in os.scandir(path="metaTimelapse")]
+    
+    for file in metaTimelapseStillsOnPi:
+        if file not in filesOnDropbox:
+            print(f"Uploading file {file}.\n")
+            dropboxUploader(f"metaTimelapse/{file}")
+    print(f"Finished updating Metatimelapse folder.\n")
 
 
 def uploadLog():
     print(f"Uploading log.txt\n")
     dropboxUploader("log.txt")
-    send2trash("log.txt")
+    # send2trash("log.txt")
 
 
 def main():
@@ -200,7 +224,7 @@ def main():
     currentTime = datetime.utcnow().replace(tzinfo=pytz.utc)
 
     if testing:
-        initialSleep = 3
+        initialSleep = 2
         endTime = endTimeWhenTesting
         print(f"endTime = {endTime}")
     else:
@@ -275,7 +299,10 @@ def main():
         dropboxFileDownloadLinks = dropboxGetFileDownloadLinks()
         sendEMail(dropboxFileDownloadLinks)
 
-    uploadDailyImageFolders()
+    uploadDailyImageFolders(config["upload_stills"])
+
+    if config["upload_meta_stills"]:
+        updateMetaTimelapseStills()
 
     if os.path.exists("log.txt"):
         uploadLog()

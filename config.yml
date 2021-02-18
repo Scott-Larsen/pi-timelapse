@@ -4,7 +4,8 @@
 ##################
 
 testing: 1 # 1 for True
-take_new_photos_in_testing: 1 # 1 for True (i.e., take photos), 0 for False
+take_new_photos_in_testing: 0 # 1 for True (i.e., take photos), 0 for False
+num_photos_testing: 25 # 223 # Number of photos to take while testing.
 
 # Working Start/ Finish - timelapse will take the more restrictive of this and sunrise/ sunset
 workingStart: "6:00"
@@ -16,6 +17,12 @@ livestream_test_duration: 80
 
 # The interval between captures (in seconds).
 interval: 30
+
+# Whether to upload individual still photographs that make up the time-lapses.
+upload_stills: False
+
+# Whether to upload metatimelapse stills.
+upload_meta_stills: True
 
 # Whether to create an video after capturing the time-lapse images.
 create_video: True
@@ -43,6 +50,9 @@ white_balance:
   {}
   # red_gain: 1.3
   # blue_gain: 1.75
+
+# Exposure Compensation. Appears to be 1/6th the value of conventional EV, where 1 == a stop
+exposure_compensation: -4
 
 # Rotate the images taken by the camera. Possible value are 0, 90, 180 or 270
 rotation: 0

@@ -50,7 +50,7 @@ Because I'd have this setup at a remote location without direct access into the 
 
 And since I knew problems would develop over time and I won't be around to restart the Pi I run this command to restart the Pi daily.
 
-````3 40 * * * /sbin/shutdown -r now```
+```3 40 * * * /sbin/shutdown -r now```
 
 When you've entered all of the commands, close and save the crontab file (`control-x` and `S` in Nano).
 
