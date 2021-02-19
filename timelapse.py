@@ -32,7 +32,7 @@ if testing:
         0, config["num_photos_testing"]
     )  # Second number adds X seconds/ photos
 
-LIVESTREAM_COMMAND = "raspivid -o - -t 0 -vf -hf -fps 24 -b 4500000 -rot 180 | ffmpeg -re -an -f s16le -i /dev/zero -i - -vcodec copy -acodec aac -ab 384k -g 17 -strict experimental -f flv -t -hide_banner -loglevel error"
+LIVESTREAM_COMMAND = "raspivid -o - -t 0 -vf -hf -fps 24 -b 4500000 -rot 180 | ffmpeg -re -an -f s16le -i /dev/zero -i - -vcodec copy -acodec aac -ab 384k -g 17 -strict experimental -f flv -t "
 if testing:
     LIVESTREAM_DURATION = config["livestream_test_duration"]
 else:
@@ -158,6 +158,7 @@ def create_video(stillsDirectory, initiationDateString, timelapseFullPath):
         + "-%05d.jpg"
         + " -c:v libx265 -crf 28 "
         + str(timelapseFullPath)
+        + " -hide_banner -loglevel error"
     )
 
     os.system(command)
@@ -176,7 +177,7 @@ def create_meta_video(initiationDateString, workingDirectory, stillsDirectory, e
         src_file = Path.joinpath(stillsDirectory, filename)
         shutil.copy(src_file, dest_dir)  # copy the file to destination dir
 
-    command = 'ffmpeg -r 24 -pattern_type glob -i "metaTimelapse/*.jpg" -c:v libx264 -vf fps=24 metaTimelapse.mp4'
+    command = 'ffmpeg -r 24 -pattern_type glob -i "metaTimelapse/*.jpg" -c:v libx264 -vf fps=24 metaTimelapse.mp4 -hide_banner -loglevel error'
 
     os.system(command)
 
@@ -199,16 +200,22 @@ def uploadDailyImageFolders(tf):
 
 def updateMetaTimelapseStills():
     dbx = dropbox.Dropbox(D_ACCESS_TOKEN)
-    response = dbx.files_list_folder(path="/metaTimelapse")
-    filesOnDropbox = [file.name for file in response.entries]
+    try:
+        response = dbx.files_list_folder(path="/metaTimelapse")
+        filesOnDropbox = [file.name for file in response.entries]
 
-    metaTimelapseStillsOnPi = [
-        f.name for f in os.scandir(path="metaTimelapse")]
+        metaTimelapseStillsOnPi = [
+            f.name for f in os.scandir(path="metaTimelapse")]
+        
+        for file in metaTimelapseStillsOnPi:
+            if file not in filesOnDropbox:
+                print(f"Uploading file {file}.\n")
+                dropboxUploader(f"metaTimelapse/{file}")
     
-    for file in metaTimelapseStillsOnPi:
-        if file not in filesOnDropbox:
-            print(f"Uploading file {file}.\n")
-            dropboxUploader(f"metaTimelapse/{file}")
+    except dropbox.exceptions.ApiError as e: # Directory doesn't exist on Dropbox
+        if "ListFolderError" in e:
+            print(f"Uploading metaTimelapse folder to Dropbox.\n")
+            dropboxUploader("/metaTimelapse")
     print(f"Finished updating Metatimelapse folder.\n")
 
 
