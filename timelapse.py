@@ -9,7 +9,7 @@ import dropbox
 from time import time
 from yaml import safe_load
 from picamera import PiCamera
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from time import sleep
 from send2trash import send2trash
 from pathlib import Path
@@ -165,20 +165,24 @@ def create_video(stillsDirectory, initiationDateString, timelapseFullPath):
 
 
 def create_meta_video(initiationDateString, workingDirectory, stillsDirectory, endTime):
+    """ Copy a few stills from todays photographs and create metaTimelapse of overall project."""
 
     dest_dir = Path.joinpath(workingDirectory, "metaTimelapse")
-
+    
     files = os.listdir(Path.joinpath(stillsDirectory))
     files.sort()
     lastPhotographNumber = int(files[-1][-9:-4])
 
+    # Copy select stills from daily timelapse folder to metaTimelapse directory.
+    print("\n\n", "*" * 20, lastPhotographNumber // 50 + 50, lastPhotographNumber - 50, "*" * 20, "\n\n")
     for i in range(lastPhotographNumber // 50 + 50, lastPhotographNumber - 50, 50):
         filename = initiationDateString + "-" + str(i).zfill(5) + ".jpg"
         src_file = Path.joinpath(stillsDirectory, filename)
         shutil.copy(src_file, dest_dir)  # copy the file to destination dir
+        print(f"Copying {src_file} to {dest_dir}")
 
+    # Create metaTimelapse
     command = 'ffmpeg -r 24 -pattern_type glob -i "metaTimelapse/*.jpg" -c:v libx264 -vf fps=24 metaTimelapse.mp4 -hide_banner -loglevel error'
-
     os.system(command)
 
 
@@ -201,16 +205,16 @@ def uploadDailyImageFolders(tf):
 def updateMetaTimelapseStills():
     dbx = dropbox.Dropbox(D_ACCESS_TOKEN)
     try:
-        response = dbx.files_list_folder(path="/metaTimelapse")
-        filesOnDropbox = [file.name for file in response.entries]
+        # response = dbx.files_list_folder(path="/metaTimelapse")
+        # filesOnDropbox = [file.name for file in response.entries]
 
         metaTimelapseStillsOnPi = [
-            f.name for f in os.scandir(path="metaTimelapse")]
+            f.name for f in os.scandir(path="metaTimelapse") if f.name.startswith(date.today().strftime("%Y-%m-%d"))]
         
         for file in metaTimelapseStillsOnPi:
-            if file not in filesOnDropbox:
-                print(f"Uploading file {file}.\n")
-                dropboxUploader(f"metaTimelapse/{file}")
+            # if file not in filesOnDropbox:
+            print(f"Uploading file {file}.\n")
+            dropboxUploader(f"metaTimelapse/{file}")
     
     except dropbox.exceptions.ApiError as e: # Directory doesn't exist on Dropbox
         if "ListFolderError" in e:
@@ -220,9 +224,12 @@ def updateMetaTimelapseStills():
 
 
 def uploadLog():
-    print(f"Uploading log.txt\n")
-    dropboxUploader("log.txt")
-    # send2trash("log.txt")
+    try:
+        print("Uploading log.txt\n")
+        dropboxUploader("log.txt", write_mode="overwrite")
+        send2trash("log.txt")
+    except:
+        print("Log failed to upload to Dropbox\n")
 
 
 def main():
@@ -233,7 +240,7 @@ def main():
     if testing:
         initialSleep = 2
         endTime = endTimeWhenTesting
-        print(f"endTime = {endTime}")
+        # print(f"endTime = {endTime}")
     else:
         initialSleep = (
             (startTime - currentTime).total_seconds()

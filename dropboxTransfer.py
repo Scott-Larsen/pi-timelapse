@@ -66,10 +66,10 @@ class TransferData:
         listOfDropboxLinks = []
         response = dbx.files_list_folder(path="")
         for file in response.entries:
-            if "log" not in file:
-                listOfDropboxLinks.append(
-                    dbx.sharing_create_shared_link("/" + file.name).url
-                )
+            # if "log" not in file:
+            listOfDropboxLinks.append(
+                dbx.sharing_create_shared_link("/" + file.name).url
+            )
         return listOfDropboxLinks
 
     def dropboxDeleteFile(self, filename):
