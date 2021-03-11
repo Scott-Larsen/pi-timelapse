@@ -13,6 +13,7 @@ from datetime import date, datetime, timedelta
 from time import sleep
 from send2trash import send2trash
 from pathlib import Path
+from math import ceil
 from sunriseSunset import calculateStartTimeAndEndTimes
 from dropboxTransfer import dropboxUploader, dropboxGetFileDownloadLinks
 from sendEMail import sendEMail
@@ -30,7 +31,7 @@ if testing:
     currentTime = datetime.utcnow().replace(tzinfo=pytz.utc)
     endTimeWhenTesting = currentTime + timedelta(
         0, config["num_photos_testing"]
-    )  # Second number adds X seconds/ photos
+    )
 
 LIVESTREAM_COMMAND = "raspivid -o - -t 0 -vf -hf -fps 24 -b 4500000 -rot 180 | ffmpeg -re -an -f s16le -i /dev/zero -i - -vcodec copy -acodec aac -ab 384k -g 17 -strict experimental -f flv -t "
 if testing:
@@ -90,25 +91,20 @@ def capture_images(stillsDirectory, initiationDateString, endTime):
     try:
         global image_number
 
+        # Start up the camera.
+        camera = PiCamera()
+        set_camera_options(camera)
+
         if testing:
             interval = 1
         else:
             interval = config["interval"]
-
-        while datetime.utcnow().replace(tzinfo=pytz.utc) < endTime:
-
+        iterations = ceil(timeRemaining.total_seconds() / interval)
+        logInterval = 10 if testing == True else 100
+        for i in range(iterations):
             lastPictureCaptureTime = datetime.utcnow().replace(tzinfo=pytz.utc)
-            n = 10 if testing else 100
-            if image_number % n == 0:
+            if i % logInterval == 0:
                 print(f"Taking picture #{image_number}")
-                print(
-                    f"Time of latest picture: {lastPictureCaptureTime}, End of timelapse: {endTime}\n"
-                )
-
-            # Start up the camera.
-            camera = PiCamera()
-            set_camera_options(camera)
-
             # Capture a picture.
             camera.capture(
                 str(stillsDirectory)
@@ -117,21 +113,18 @@ def capture_images(stillsDirectory, initiationDateString, endTime):
                 + "-{0:05d}.jpg".format(image_number)
             )
 
-            camera.close()
-
-            image_number += 1
-
-            for i in range((interval - 1) // 50 if (interval - 1) // 50 > 1 else 1):
-                print("Checking for livestream command")
-                if checkSQSforGoLiveCommand():
-                    print("\nWe're going Live!\n")
-                    os.system(
-                        LIVESTREAM_COMMAND
-                        + str(LIVESTREAM_DURATION)
-                        + TWITCH_ADDRESS
-                        + STREAM_TOKEN
-                    )
-                sleep(5)
+            numStreamingChecks = max(1, interval // 10)
+            for j in range(numStreamingChecks):
+                if i % logInterval == 0:
+                    print("Checking whether to go live.")
+                    if checkSQSforGoLiveCommand():
+                        print("\nWe're going Live!\n")
+                        os.system(
+                            LIVESTREAM_COMMAND
+                            + str(LIVESTREAM_DURATION)
+                            + TWITCH_ADDRESS
+                            + STREAM_TOKEN
+                        )
 
             currentTime = datetime.utcnow().replace(tzinfo=pytz.utc)
             if currentTime < lastPictureCaptureTime + timedelta(0, interval):
@@ -140,8 +133,12 @@ def capture_images(stillsDirectory, initiationDateString, endTime):
                         lastPictureCaptureTime + timedelta(0, interval) - currentTime
                     ).total_seconds()
                 )
+            
+            image_number += 1
 
-        print("\nTime-lapse capture complete!\n")
+        camera.close()
+
+        print("\nTime-lapse stills captured.\n")
 
     except (KeyboardInterrupt):
         print("\nTime-lapse capture cancelled.\n")
@@ -173,13 +170,10 @@ def create_meta_video(initiationDateString, workingDirectory, stillsDirectory, e
     files.sort()
     lastPhotographNumber = int(files[-1][-9:-4])
 
-    # Copy select stills from daily timelapse folder to metaTimelapse directory.
-    print("\n\n", "*" * 20, lastPhotographNumber // 50 + 50, lastPhotographNumber - 50, "*" * 20, "\n\n")
     for i in range(lastPhotographNumber // 50 + 50, lastPhotographNumber - 50, 50):
         filename = initiationDateString + "-" + str(i).zfill(5) + ".jpg"
         src_file = Path.joinpath(stillsDirectory, filename)
-        shutil.copy(src_file, dest_dir)  # copy the file to destination dir
-        print(f"Copying {src_file} to {dest_dir}")
+        shutil.copy(src_file, dest_dir)
 
     # Create metaTimelapse
     command = 'ffmpeg -r 24 -pattern_type glob -i "metaTimelapse/*.jpg" -c:v libx264 -vf fps=24 metaTimelapse.mp4 -hide_banner -loglevel error'
@@ -205,14 +199,10 @@ def uploadDailyImageFolders(tf):
 def updateMetaTimelapseStills():
     dbx = dropbox.Dropbox(D_ACCESS_TOKEN)
     try:
-        # response = dbx.files_list_folder(path="/metaTimelapse")
-        # filesOnDropbox = [file.name for file in response.entries]
-
         metaTimelapseStillsOnPi = [
             f.name for f in os.scandir(path="metaTimelapse") if f.name.startswith(date.today().strftime("%Y-%m-%d"))]
         
         for file in metaTimelapseStillsOnPi:
-            # if file not in filesOnDropbox:
             print(f"Uploading file {file}.\n")
             dropboxUploader(f"metaTimelapse/{file}")
     
@@ -240,7 +230,6 @@ def main():
     if testing:
         initialSleep = 2
         endTime = endTimeWhenTesting
-        # print(f"endTime = {endTime}")
     else:
         initialSleep = (
             (startTime - currentTime).total_seconds()
@@ -250,15 +239,13 @@ def main():
     print(f"Sleeping for {int(initialSleep)} seconds.\n")
     sleep(initialSleep)
 
-    # Create directory based on current timestamp.
     if testing:
-        initiationDate = datetime.now(pytz.timezone("US/Eastern"))  # datetime.today()
+        initiationDate = datetime.now(pytz.timezone("US/Eastern"))
     else:
         initiationDate = datetime.utcnow().date()
     initiationDateString = initiationDate.strftime("%Y-%m-%d")
 
     fileFolderName = initiationDateString + "-timelapse"
-    print(f"fileFolderName is: " + fileFolderName)
 
     workingDirectory = Path("/home/pi/pi-timelapse")
     stillsDirectory = Path.joinpath(workingDirectory, fileFolderName)
@@ -267,7 +254,6 @@ def main():
     timelapseFullPath = Path.joinpath(workingDirectory, timelapseFilename)
 
     if not testing or testing and takeNewPhotos:
-        print(f"Creating the <{stillsDirectory}> for the still images.\n")
         create_timestamped_dir(stillsDirectory)
 
         # Kick off the capture process.
@@ -281,16 +267,11 @@ def main():
         create_video(stillsDirectory, initiationDateString, timelapseFullPath)
         print("Daily timelapse video created.\n")
 
-        print(
-            f"Uploading {timelapseFilename} to Dropbox at "
-            + datetime.utcnow().strftime("%Y-%m-%d %H:%m:%s")
-            + " UTC\n"
-        )
         try:
             dropboxUploader(timelapseFilename)
             send2trash(timelapseFilename)
             print(
-                "Uploaded daily timelapse video to Dropbox and deleted it from Raspberry Pi\n"
+                "Daily timelapse video deleted from Raspberry Pi\n"
             )
         except:
             print("Daily timelapse failed to upload to Dropbox")
@@ -304,13 +285,14 @@ def main():
         try:
             dropboxUploader("metaTimelapse.mp4", "overwrite")
             send2trash("metaTimelapse.mp4")
-            print("MetaTimelapse uploaded to Dropbox and deleted from Raspberry Pi\n")
+            print("MetaTimelapse deleted from Raspberry Pi\n")
         except:
             print("MetaTimelapse failed to upload to Dropbox")
 
     # Send e-mail about new video being uploaded to Dropbox
     if config["create_video"] or config["create_meta_video"]:
-        dropboxFileDownloadLinks = dropboxGetFileDownloadLinks()
+        dropboxFileDownloadLinks = [x for x in dropboxGetFileDownloadLinks() if "imelapse" in x]
+
         sendEMail(dropboxFileDownloadLinks)
 
     uploadDailyImageFolders(config["upload_stills"])
